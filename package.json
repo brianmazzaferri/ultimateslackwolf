@@ -1,0 +1,25 @@
+{
+  "name": "bolt-app-template",
+  "version": "0.0.1",
+  "description": "An attempt to code a basic Werewolf game using Bolt & Slack",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "@slack/bolt": "^1.6.0",
+    "nedb": "*"
+  },
+  "engines": {
+    "node": "11.x"
+  },
+  "repository": {
+    "url": "https://glitch.com/edit/#!/bolt-app-template"
+  },
+  "license": "MIT",
+  "keywords": [
+    "node",
+    "glitch",
+    "express"
+  ]
+}
