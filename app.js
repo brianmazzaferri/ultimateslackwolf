@@ -351,7 +351,7 @@ app.action("seerSelect", async ({ ack, body, context }) => {
   }
 });
 
-//listen for an accusation, check to make sure the person isn't dead, and start the voting
+//listen for an accusation, check to make sure the person isn't dead, and start the voting if accusations are done
 app.action("accusationSelect", async ({ ack, body, context }) => {
   ack();
   try {
@@ -894,7 +894,16 @@ async function distributeRolesViaDM(player, role, spec) {
       },
       {
         type: "divider"
-      }
+      },
+      		{
+			"type": "context",
+			"elements": [
+				{
+					"type": "mrkdwn",
+					"text": "(Werewolf game <#" + await getGameChannel() + ">)"
+				}
+			]
+		}
     ];
   }
   if (role === "werewolf") {
@@ -918,7 +927,16 @@ async function distributeRolesViaDM(player, role, spec) {
       },
       {
         type: "divider"
-      }
+      },
+      		{
+			"type": "context",
+			"elements": [
+				{
+					"type": "mrkdwn",
+					"text": "(Werewolf game <#" + await getGameChannel() + ">)"
+				}
+			]
+		}
     ];
   }
   if (role === "villager" && spec === "seer") {
@@ -942,7 +960,16 @@ async function distributeRolesViaDM(player, role, spec) {
       },
       {
         type: "divider"
-      }
+      },
+      		{
+			"type": "context",
+			"elements": [
+				{
+					"type": "mrkdwn",
+					"text": "(Werewolf game <#" + await getGameChannel() + ">)"
+				}
+			]
+		}
     ];
   }
   if (role === "villager" && spec === "bodyguard") {
@@ -1024,13 +1051,27 @@ async function distributeVotingButtons(player, name) {
             action_id: "submitvote"
           }
         ]
-      }
+      },
+      		{
+			"type": "context",
+			"elements": [
+				{
+					"type": "mrkdwn",
+					"text": "(Werewolf game <#" + await getGameChannel() + ">)"
+				}
+			]
+		}
     ]
   });
 }
 
 //distribute accusation buttons via DM
 async function distributeAccusationButtons(player, killArray, actionid) {
+    const response2 = await app.client.chat.postMessage({
+    token: process.env.SLACK_BOT_TOKEN,
+    channel: player,
+    text: "Time to figure out who the werewolf is! Once you are ready to accuse someone, use the selector below"
+  });
   const response = await app.client.chat.postMessage({
     token: process.env.SLACK_BOT_TOKEN,
     channel: player,
@@ -1049,7 +1090,16 @@ async function distributeAccusationButtons(player, killArray, actionid) {
             action_id: actionid
           }
         ]
-      }
+      },
+      		{
+			"type": "context",
+			"elements": [
+				{
+					"type": "mrkdwn",
+					"text": "(Werewolf game <#" + await getGameChannel() + ">)"
+				}
+			]
+		}
     ]
   });
 }
@@ -1105,6 +1155,11 @@ async function sendBodyguardSelector() {
   });
   setTimeout(async () => {
     let userid = await queryOne({ spec: "bodyguard" });
+        const response3 = await app.client.chat.postMessage({
+      token: process.env.SLACK_BOT_TOKEN,
+      channel: userid.player,
+      text: "It's time to use your power! Use the selector below to protect someone:"
+    });
     const response2 = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
       channel: userid.player,
@@ -1124,7 +1179,16 @@ async function sendBodyguardSelector() {
               action_id: "bodyguardSelect"
             }
           ]
-        }
+        },
+      		{
+			"type": "context",
+			"elements": [
+				{
+					"type": "mrkdwn",
+					"text": "(Werewolf game <#" + await getGameChannel() + ">)"
+				}
+			]
+		}
       ]
     });
   }, 1250);
@@ -1140,6 +1204,11 @@ async function sendSeerSelector() {
   });
   setTimeout(async () => {
     let userid = await queryOne({ spec: "seer" });
+            const response3 = await app.client.chat.postMessage({
+      token: process.env.SLACK_BOT_TOKEN,
+      channel: userid.player,
+      text: "It's time to use your power! Use the selector below to investigate someone:"
+    });
     const response2 = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
       channel: userid.player,
@@ -1174,6 +1243,11 @@ async function sendKillSelector() {
     killArray.push(newOption);
   });
   setTimeout(async () => {
+            const response4 = await app.client.chat.postMessage({
+      token: process.env.SLACK_BOT_TOKEN,
+      channel: await getWerewolf(),
+      text: "It's time to dine! Use the selector below to eat someone:"
+    });
     const response2 = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
       channel: await getWerewolf(),
@@ -1193,7 +1267,16 @@ async function sendKillSelector() {
               action_id: "killSelect"
             }
           ]
-        }
+        },
+      		{
+			"type": "context",
+			"elements": [
+				{
+					"type": "mrkdwn",
+					"text": "(Werewolf game <#" + await getGameChannel() + ">)"
+				}
+			]
+		}
       ]
     });
   }, 1000);
@@ -1551,7 +1634,7 @@ function query(query) {
   });
 }
 
-//look up player name from user id
+//advance round
 async function advanceRound() {
   await db.findOne(
     { datatype: "game" },
@@ -1710,12 +1793,9 @@ async function endGame(winner) {
 
 bugs:
 make sure nothing can get double-sent due to timeouts (e.g. starting the day round)
-send extra message to make sure the DM lights up when distributing selectors (bg/seer/werewolf, accusation,vote)
-add channel hotlink to notifications
 something funky going on with round advancing / numbering
 
 ops:
-setup github for developing / diffing
 
 v2:
 add multiple werewolves
