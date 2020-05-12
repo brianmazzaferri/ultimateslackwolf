@@ -393,6 +393,11 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
       let response = await app.client.chat.postMessage({
         token: context.botToken,
         channel: await getGameChannel(),
+        text:
+          (await playerNameFromId(body.user.id)) +
+          " has accused " +
+          accusedName +
+          " of being a Werewolf!",
         blocks: [
           {
             type: "section",
@@ -467,7 +472,7 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
           let response3 = await app.client.chat.postMessage({
             token: context.botToken,
             channel: await getGameChannel(),
-            text: `${finalAccused} stands accused of being a werewolf. They have 30 seconds to defend themselves, and then the village will vote on whether they live or die.`,
+            text: `${finalAccused} stands accused of being a werewolf. They should now offer their last statement, and the village will vote on whether they live or die.`,
             blocks: [
               {
                 type: "divider"
@@ -479,12 +484,11 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
                   text:
                     "*It's time to pass judgment!*\n" +
                     finalAccused +
-                    " stands accused of being a werewolf. They have 30 seconds to defend themselves, and then the village will vote on whether they live or die."
+                    " stands accused of being a werewolf. They should now offer their last statement, and the village will vote on whether they live or die."
                 },
                 accessory: {
                   type: "image",
-                  image_url:
-                    "https://img.freepik.com/free-vector/illustration-gavel_53876-28508.jpg?size=626&ext=jpg",
+                  image_url: "https://i.imgur.com/WU8mD4R.jpg",
                   alt_text: "calendar thumbnail"
                 }
               },
@@ -495,11 +499,9 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
           });
           await updateAccusedInRoundTable(finalAccused);
           let livingVillagerArray = await getLivingVillagersPlusWerewolfId();
-          setTimeout(() => {
-            livingVillagerArray.forEach(player => {
-              distributeVotingButtons(player.player, finalAccused);
-            });
-          }, 30000);
+          livingVillagerArray.forEach(player => {
+            distributeVotingButtons(player.player, finalAccused);
+          });
         } else {
           let killArray = [];
           runoffArray.forEach(villager => {
@@ -524,8 +526,7 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
                 },
                 accessory: {
                   type: "image",
-                  image_url:
-                    "https://www.hubcityspokes.com/sites/default/files/styles/large/public/field/image/Runoff.png",
+                  image_url: "https://i.imgur.com/2Bmy8M7.jpg",
                   alt_text: "computer thumbnail"
                 }
               },
@@ -603,6 +604,11 @@ app.action("runoffSelect", async ({ ack, body, context }) => {
       let response = await app.client.chat.postMessage({
         token: context.botToken,
         channel: body.channel.id,
+        text:
+          (await playerNameFromId(body.user.id)) +
+          " has accused " +
+          accusedName +
+          " of being a Werewolf!",
         blocks: [
           {
             type: "section",
@@ -671,7 +677,7 @@ app.action("runoffSelect", async ({ ack, body, context }) => {
           let response3 = await app.client.chat.postMessage({
             token: context.botToken,
             channel: await getGameChannel(),
-            text: `${finalAccused} stands accused of being a werewolf. They have 30 seconds to defend themselves, and then the village will vote on whether they live or die.`,
+            text: `${finalAccused} stands accused of being a werewolf. They may now make their last statement, and then the village will vote on whether they live or die.`,
             blocks: [
               {
                 type: "divider"
@@ -683,12 +689,11 @@ app.action("runoffSelect", async ({ ack, body, context }) => {
                   text:
                     "*It's time to pass judgment!*\n" +
                     finalAccused +
-                    " stands accused of being a werewolf. They have 30 seconds to defend themselves, and then the village will vote on whether they live or die."
+                    " stands accused of being a werewolf. They may now make their last statement, and then the village will vote on whether they live or die."
                 },
                 accessory: {
                   type: "image",
-                  image_url:
-                    "https://img.freepik.com/free-vector/illustration-gavel_53876-28508.jpg?size=626&ext=jpg",
+                  image_url: "https://i.imgur.com/WU8mD4R.jpg",
                   alt_text: "calendar thumbnail"
                 }
               },
@@ -699,11 +704,9 @@ app.action("runoffSelect", async ({ ack, body, context }) => {
           });
           await updateAccusedInRoundTable(finalAccused);
           let livingVillagerArray = await getLivingVillagersPlusWerewolfId();
-          setTimeout(() => {
-            livingVillagerArray.forEach(player => {
-              distributeVotingButtons(player.player, finalAccused);
-            });
-          }, 30000);
+          livingVillagerArray.forEach(player => {
+            distributeVotingButtons(player.player, finalAccused);
+          });
         } else {
           const response3 = await app.client.chat.postMessage({
             token: process.env.SLACK_BOT_TOKEN,
@@ -783,8 +786,7 @@ async function endDayRound(verdict) {
           },
           accessory: {
             type: "image",
-            image_url:
-              "https://i.pinimg.com/originals/97/1a/e6/971ae6ac9ff2e4216a66fbd117261fd1.jpg",
+            image_url: "https://i.imgur.com/C4H0Xp6.jpg",
             alt_text: "computer thumbnail"
           }
         },
@@ -817,8 +819,7 @@ async function endDayRound(verdict) {
           },
           accessory: {
             type: "image",
-            image_url:
-              "https://previews.123rf.com/images/filkusto/filkusto1702/filkusto170200090/70972177-gallows-sketch-device-for-hanging-illustration-for-coloring.jpg",
+            image_url: "https://i.imgur.com/LPCVU2L.jpg",
             alt_text: "computer thumbnail"
           }
         },
@@ -887,23 +888,22 @@ async function distributeRolesViaDM(player, role, spec) {
         },
         accessory: {
           type: "image",
-          image_url:
-            "https://image.shutterstock.com/image-vector/medieval-peasants-family-man-woman-260nw-1364869232.jpg",
+          image_url: "https://i.imgur.com/q7k9WWT.png",
           alt_text: "calendar thumbnail"
         }
       },
       {
         type: "divider"
       },
-      		{
-			"type": "context",
-			"elements": [
-				{
-					"type": "mrkdwn",
-					"text": "(Werewolf game <#" + await getGameChannel() + ">)"
-				}
-			]
-		}
+      {
+        type: "context",
+        elements: [
+          {
+            type: "mrkdwn",
+            text: "(Werewolf game <#" + (await getGameChannel()) + ">)"
+          }
+        ]
+      }
     ];
   }
   if (role === "werewolf") {
@@ -920,23 +920,22 @@ async function distributeRolesViaDM(player, role, spec) {
         },
         accessory: {
           type: "image",
-          image_url:
-            "https://st4.depositphotos.com/1756323/21341/i/450/depositphotos_213414712-stock-photo-fantasy-werewolf-standing-rocky-cliff.jpg",
+          image_url: "https://i.imgur.com/uZmxflH.jpg",
           alt_text: "calendar thumbnail"
         }
       },
       {
         type: "divider"
       },
-      		{
-			"type": "context",
-			"elements": [
-				{
-					"type": "mrkdwn",
-					"text": "(Werewolf game <#" + await getGameChannel() + ">)"
-				}
-			]
-		}
+      {
+        type: "context",
+        elements: [
+          {
+            type: "mrkdwn",
+            text: "(Werewolf game <#" + (await getGameChannel()) + ">)"
+          }
+        ]
+      }
     ];
   }
   if (role === "villager" && spec === "seer") {
@@ -953,23 +952,22 @@ async function distributeRolesViaDM(player, role, spec) {
         },
         accessory: {
           type: "image",
-          image_url:
-            "https://thumbs.dreamstime.com/b/retro-woodcut-style-illustration-fortune-teller-medium-psychic-mystic-seer-soothsayer-clairvoyant-scrying-crystal-ball-109430762.jpg",
+          image_url: "https://i.imgur.com/OP4kL3n.jpg",
           alt_text: "calendar thumbnail"
         }
       },
       {
         type: "divider"
       },
-      		{
-			"type": "context",
-			"elements": [
-				{
-					"type": "mrkdwn",
-					"text": "(Werewolf game <#" + await getGameChannel() + ">)"
-				}
-			]
-		}
+      {
+        type: "context",
+        elements: [
+          {
+            type: "mrkdwn",
+            text: "(Werewolf game <#" + (await getGameChannel()) + ">)"
+          }
+        ]
+      }
     ];
   }
   if (role === "villager" && spec === "bodyguard") {
@@ -986,8 +984,7 @@ async function distributeRolesViaDM(player, role, spec) {
         },
         accessory: {
           type: "image",
-          image_url:
-            "https://comps.canstockphoto.com/bodyguard-security-guard-vector-cartoon-vector-clip-art_csp67369111.jpg",
+          image_url: "https://i.imgur.com/8DajcpK.jpg",
           alt_text: "calendar thumbnail"
         }
       },
@@ -1052,25 +1049,26 @@ async function distributeVotingButtons(player, name) {
           }
         ]
       },
-      		{
-			"type": "context",
-			"elements": [
-				{
-					"type": "mrkdwn",
-					"text": "(Werewolf game <#" + await getGameChannel() + ">)"
-				}
-			]
-		}
+      {
+        type: "context",
+        elements: [
+          {
+            type: "mrkdwn",
+            text: "(Werewolf game <#" + (await getGameChannel()) + ">)"
+          }
+        ]
+      }
     ]
   });
 }
 
 //distribute accusation buttons via DM
 async function distributeAccusationButtons(player, killArray, actionid) {
-    const response2 = await app.client.chat.postMessage({
+  const response2 = await app.client.chat.postMessage({
     token: process.env.SLACK_BOT_TOKEN,
     channel: player,
-    text: "Time to figure out who the werewolf is! Once you are ready to accuse someone, use the selector below"
+    text:
+      "Time to figure out who the werewolf is! Once you are ready to accuse someone, use the selector below"
   });
   const response = await app.client.chat.postMessage({
     token: process.env.SLACK_BOT_TOKEN,
@@ -1091,15 +1089,15 @@ async function distributeAccusationButtons(player, killArray, actionid) {
           }
         ]
       },
-      		{
-			"type": "context",
-			"elements": [
-				{
-					"type": "mrkdwn",
-					"text": "(Werewolf game <#" + await getGameChannel() + ">)"
-				}
-			]
-		}
+      {
+        type: "context",
+        elements: [
+          {
+            type: "mrkdwn",
+            text: "(Werewolf game <#" + (await getGameChannel()) + ">)"
+          }
+        ]
+      }
     ]
   });
 }
@@ -1124,8 +1122,7 @@ async function startNightRound() {
         },
         accessory: {
           type: "image",
-          image_url:
-            "https://i-cf5.gskstatic.com/content/dam/cf-consumer-healthcare/excedrin/en_US/Article%20Teaser/2.3.8.Treat-nighttime-headaches-233x233.jpg?auto=format",
+          image_url: "https://i.imgur.com/KBQLthQ.jpg",
           alt_text: "calendar thumbnail"
         }
       },
@@ -1155,10 +1152,11 @@ async function sendBodyguardSelector() {
   });
   setTimeout(async () => {
     let userid = await queryOne({ spec: "bodyguard" });
-        const response3 = await app.client.chat.postMessage({
+    const response3 = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
       channel: userid.player,
-      text: "It's time to use your power! Use the selector below to protect someone:"
+      text:
+        "It's time to use your power! Use the selector below to protect someone:"
     });
     const response2 = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
@@ -1180,15 +1178,15 @@ async function sendBodyguardSelector() {
             }
           ]
         },
-      		{
-			"type": "context",
-			"elements": [
-				{
-					"type": "mrkdwn",
-					"text": "(Werewolf game <#" + await getGameChannel() + ">)"
-				}
-			]
-		}
+        {
+          type: "context",
+          elements: [
+            {
+              type: "mrkdwn",
+              text: "(Werewolf game <#" + (await getGameChannel()) + ">)"
+            }
+          ]
+        }
       ]
     });
   }, 1250);
@@ -1204,10 +1202,11 @@ async function sendSeerSelector() {
   });
   setTimeout(async () => {
     let userid = await queryOne({ spec: "seer" });
-            const response3 = await app.client.chat.postMessage({
+    const response3 = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
       channel: userid.player,
-      text: "It's time to use your power! Use the selector below to investigate someone:"
+      text:
+        "It's time to use your power! Use the selector below to investigate someone:"
     });
     const response2 = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
@@ -1228,6 +1227,15 @@ async function sendSeerSelector() {
               action_id: "seerSelect"
             }
           ]
+        },
+        {
+          type: "context",
+          elements: [
+            {
+              type: "mrkdwn",
+              text: "(Werewolf game <#" + (await getGameChannel()) + ">)"
+            }
+          ]
         }
       ]
     });
@@ -1243,7 +1251,7 @@ async function sendKillSelector() {
     killArray.push(newOption);
   });
   setTimeout(async () => {
-            const response4 = await app.client.chat.postMessage({
+    const response4 = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
       channel: await getWerewolf(),
       text: "It's time to dine! Use the selector below to eat someone:"
@@ -1268,15 +1276,15 @@ async function sendKillSelector() {
             }
           ]
         },
-      		{
-			"type": "context",
-			"elements": [
-				{
-					"type": "mrkdwn",
-					"text": "(Werewolf game <#" + await getGameChannel() + ">)"
-				}
-			]
-		}
+        {
+          type: "context",
+          elements: [
+            {
+              type: "mrkdwn",
+              text: "(Werewolf game <#" + (await getGameChannel()) + ">)"
+            }
+          ]
+        }
       ]
     });
   }, 1000);
@@ -1326,8 +1334,7 @@ async function startDayRound(deadPerson) {
         },
         accessory: {
           type: "image",
-          image_url:
-            "https://mlfjqdsf5ptg.i.optimole.com/q2nBJDA-GY0JOikK/w:330/h:330/q:69/dpr:2.6/https://n7jmr7muhj-flywheel.netdna-ssl.com/wp-content/uploads/2019/06/sunrise.jpg",
+          image_url: "https://i.imgur.com/OM6141j.png",
           alt_text: "calendar thumbnail"
         }
       },
@@ -1736,7 +1743,7 @@ async function endGame(winner) {
           },
           accessory: {
             type: "image",
-            image_url: "https://i.redd.it/i3ggejqjq5221.jpg",
+            image_url: "https://i.imgur.com/hHiwNld.jpg",
             alt_text: "computer thumbnail"
           }
         },
@@ -1768,8 +1775,7 @@ async function endGame(winner) {
           },
           accessory: {
             type: "image",
-            image_url:
-              "https://img3.goodfon.com/wallpaper/big/1/25/oboroten-yarost-zuby-oskal.jpg",
+            image_url: "https://i.imgur.com/nYtXJgW.jpg",
             alt_text: "computer thumbnail"
           }
         },
@@ -1784,7 +1790,6 @@ async function endGame(winner) {
 //boilerplate to start the app
 (async () => {
   await app.start(process.env.PORT || 3000);
-  //console.log(await getWerewolfBotId());
   //printDatabase();
   console.log("⚡️ Bolt app is running!");
 })();
@@ -1793,7 +1798,6 @@ async function endGame(winner) {
 
 bugs:
 make sure nothing can get double-sent due to timeouts (e.g. starting the day round)
-something funky going on with round advancing / numbering
 
 ops:
 
