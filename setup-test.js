@@ -45,7 +45,7 @@ async function createNewTestChannel() {
   const response2 = await app.client.conversations.invite({
     token: process.env.SLACK_BOT_TOKEN,
     channel: newTestChanId,
-    users: "UUEPBE3D3, U011W2G9QDU, UUEQP1MPF, UU4P2UVBK, U0124HRHBU3"
+    users: "U012YK0F9RU, U0135HA9DS7, U013BGDKC5A, U013J01NZH7, U013BGDMGCU, U013BG9407N"
   });
   console.log(response);
 }
