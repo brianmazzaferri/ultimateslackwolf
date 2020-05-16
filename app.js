@@ -16,7 +16,9 @@ const app = new App({
 // When werewolf bot added to a channel, message channel with start game button
 app.event("member_joined_channel", async ({ event, context }) => {
   try {
+    console.log(event.user);
     let userName = await lookupPlayerName(event.user);
+    console.log(userName);
     if (userName === "Slackwolf Moderator") {
       const result = await app.client.chat.postMessage({
         token: context.botToken,
@@ -603,7 +605,7 @@ app.action("runoffSelect", async ({ ack, body, context }) => {
     } else {
       let response = await app.client.chat.postMessage({
         token: context.botToken,
-        channel: body.channel.id,
+        channel: await getGameChannel(),
         text:
           (await playerNameFromId(body.user.id)) +
           " has accused " +
@@ -1804,6 +1806,11 @@ ops:
 v2:
 add multiple werewolves
 add start game modal where you choose how many roles exist
+segment database to work with multiple channels
 
+refactor/cleanup:
+abstract database queries further
+reduce redundancies between accusationSelect and runoffSelect
+make sure the round table actually writes to the correct round
 
 */
