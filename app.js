@@ -13,6 +13,117 @@ const app = new App({
 
 //LISTENERS GO HERE
 
+// Listen for new game shortcut, and pop modal
+app.shortcut(
+  "new_game_shortcut",
+  async ({ shortcut, ack, context, client }) => {
+    try {
+      await ack();
+      const result = await client.views.open({
+        token: context.botToken,
+        trigger_id: shortcut.trigger_id,
+        view: {
+          type: "modal",
+          callback_id: "selectrolesbutton",
+          title: {
+            type: "plain_text",
+            text: "Start A New Game",
+            emoji: true
+          },
+          submit: {
+            type: "plain_text",
+            text: "Select Roles",
+            emoji: true
+          },
+          close: {
+            type: "plain_text",
+            text: "Cancel",
+            emoji: true
+          },
+          blocks: [
+            {
+              type: "divider"
+            },
+            {
+              type: "input",
+              block_id: "channelblock",
+              element: {
+                type: "plain_text_input",
+                action_id: "channelname"
+              },
+              label: {
+                type: "plain_text",
+                text: "New Channel Name",
+                emoji: true
+              }
+            },
+            {
+              type: "input",
+              block_id: "usersblock",
+              element: {
+                type: "multi_users_select",
+                action_id: "userstoadd",
+                placeholder: {
+                  type: "plain_text",
+                  text: "Select users",
+                  emoji: true
+                }
+              },
+              label: {
+                type: "plain_text",
+                text: "Players",
+                emoji: true
+              }
+            },
+            {
+              type: "divider"
+            }
+          ]
+        }
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+);
+
+app.view("selectrolesbutton", async ({ ack, body, view, context }) => {
+  try {
+    await ack();
+    const response = await app.client.conversations.create({
+      token: context.botToken,
+      name: view.state.values.channelblock.channelname.value
+    });
+    console.log(response.channel.id);
+    console.log(view.state.values.usersblock.userstoadd.selected_users);
+    let userArray = view.state.values.usersblock.userstoadd.selected_users;
+    userArray.forEach(async user => {
+      const response2 = await app.client.conversations.invite({
+        token: context.botToken,
+        channel: response.channel.id,
+        users: user
+      });
+    });
+    //create a table to represent role selection
+    let setupTable = {
+      datatype: "setup",
+      gameid: null,
+      villagers: 3,
+      werewolves: 1,
+      seers: 1,
+      bodyguards: 1,
+      players: 6
+    };
+    //insert setupTable
+    db.insert(setupTable, (err, newDoc) => {
+      if (err) console.log("There's a problem with the database ", err);
+      else if (newDoc) console.log("setupTable insert completed");
+    });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
 // When werewolf bot added to a channel, message channel with start game button
 app.event("member_joined_channel", async ({ event, context }) => {
   try {
@@ -61,7 +172,7 @@ app.event("member_joined_channel", async ({ event, context }) => {
 
 //listen for the start game button, and begin the game
 app.action("startgame", async ({ ack, body, context }) => {
-  ack();
+  await ack();
   try {
     //hide start button
     let response4 = await app.client.chat.update({
@@ -254,7 +365,7 @@ app.action("startgame", async ({ ack, body, context }) => {
 
 //listen for the kill selection, and off someone
 app.action("killSelect", async ({ ack, body, context }) => {
-  ack();
+  await ack();
   try {
     if (body.actions[0].block_id === (await getGameChannel())) {
       let eatenPerson = body.actions[0].selected_option.value;
@@ -292,7 +403,7 @@ app.action("killSelect", async ({ ack, body, context }) => {
 
 //listen for the bodyguard selection, and protect someone
 app.action("bodyguardSelect", async ({ ack, body, context }) => {
-  ack();
+  await ack();
   try {
     if (body.actions[0].block_id === (await getGameChannel())) {
       let protectedPerson = body.actions[0].selected_option.value;
@@ -326,7 +437,7 @@ app.action("bodyguardSelect", async ({ ack, body, context }) => {
 });
 
 app.action("seerSelect", async ({ ack, body, context }) => {
-  ack();
+  await ack();
   try {
     if (body.actions[0].block_id === (await getGameChannel())) {
       let examinedPerson = body.actions[0].selected_option.value;
@@ -355,7 +466,7 @@ app.action("seerSelect", async ({ ack, body, context }) => {
 
 //listen for an accusation, check to make sure the person isn't dead, and start the voting if accusations are done
 app.action("accusationSelect", async ({ ack, body, context }) => {
-  ack();
+  await ack();
   try {
     //    db.update({datatype:"round",round:0},{$set:{status:"complete"}});
     let response4 = await app.client.chat.update({
@@ -567,7 +678,7 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
 
 //listen for a runoff accusation, check to make sure the person isn't dead, and start the voting
 app.action("runoffSelect", async ({ ack, body, context }) => {
-  ack();
+  await ack();
   try {
     let response4 = await app.client.chat.update({
       token: context.botToken,
@@ -727,7 +838,7 @@ app.action("runoffSelect", async ({ ack, body, context }) => {
 
 //listen for voting button pushes: remove buttons, broadcast vote to channel, tally vote, check if final vote
 app.action("submitvote", async ({ ack, body, context }) => {
-  ack();
+  await ack();
   try {
     //remove buttons
     let response1 = await app.client.chat.update({
@@ -1798,6 +1909,10 @@ async function endGame(winner) {
 
 /* TO DO LIST
 
+in progress:
+start game modal is popping, submit button creates new channel and adds selected users.
+need to have it set up the gametable and display roles based on that somehow.
+
 bugs:
 make sure nothing can get double-sent due to timeouts (e.g. starting the day round)
 
@@ -1805,7 +1920,6 @@ ops:
 
 v2:
 add multiple werewolves
-add start game modal where you choose how many roles exist
 segment database to work with multiple channels
 
 refactor/cleanup:

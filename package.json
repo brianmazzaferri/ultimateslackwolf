@@ -7,7 +7,7 @@
     "start": "node app.js"
   },
   "dependencies": {
-    "@slack/bolt": "^1.6.0",
+    "@slack/bolt": "^2.0.1",
     "nedb": "*"
   },
   "engines": {
