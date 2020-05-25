@@ -1,0 +1,174 @@
+{
+          "type": "modal",
+          "callback_id": "startgame",
+          "title": {
+            "type": "plain_text",
+            "text": "Select Roles",
+            "emoji": true
+          },
+          "submit": {
+            "type": "plain_text",
+            "text": "Start Game",
+            "emoji": true
+          },
+          "close": {
+            "type": "plain_text",
+            "text": "Back",
+            "emoji": true
+          },
+          "blocks": [
+            {
+              "type": "divider"
+            },
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text":
+                  "*Current Game Balance Score: X*"
+              }
+            },
+            {
+              "type": "divider"
+            },
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text":
+                  "*Villagers : X*\nThe standard good role, these players have no special powers. Their goal is to catch and kill the werewolf, while avoiding killing innocents.\n_+1 Points Each_"
+              },
+              "accessory": {
+                "type": "image",
+                "image_url": "https://i.imgur.com/q7k9WWT.png",
+                "alt_text": "plants"
+              }
+            },
+            {
+              "type": "divider"
+            },
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+               "text":
+                  "*Werewolves : X*\nThe standard bad role, these players will be trying to eat the villagers and lying through their teeth the whole game. \n_-6 Points Each_"
+              },
+              "accessory": {
+                "type": "image",
+                "image_url": "https://i.imgur.com/uZmxflH.jpg",
+                "alt_text": "plants"
+              }
+            },
+            {
+              "type": "actions",
+              "elements": [
+                {
+                  "type": "button",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Add Werewolf",
+                    "emoji": true
+                  },
+                  "value": "addwerewolf",
+                  "action_id": "addwerewolf"
+                },
+                {
+                  "type": "button",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Remove Werewolf",
+                    "emoji": true
+                  },
+                  "value": "removewerewolf",
+                  "action_id": "removewerewolf"
+                }
+              ]
+            },
+            {
+              "type": "divider"
+            },
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text":
+                  "*Seers : X*\nThese are special villagers who have the power to investigate one other living player per round to find out if they're a werewolf.\n_+7 Points Each (Maximum 1)_"
+              },
+              "accessory": {
+                "type": "image",
+                "image_url": "https://i.imgur.com/OP4kL3n.jpg",
+                "alt_text": "plants"
+              }
+            },
+            {
+              "type": "actions",
+              "elements": [
+                {
+                  "type": "button",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Add Seer",
+                    "emoji": true
+                  },
+                  "value": "addseer",
+                  "action_id": "addseer"
+                },
+                {
+                  "type": "button",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Remove Seer",
+                    "emoji": true
+                  },
+                  "value": "removeseer",
+                  "action_id": "removeseer"
+                }
+              ]
+            },
+            {
+              "type": "divider"
+            },
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text":
+                  "*Bodyguards : X*\nThese are special villagers who have the power to protect one other living player each night, preventing them from being eaten.\n_+3 Points Each (Maximum 1)_"
+              },
+              "accessory": {
+                "type": "image",
+                "image_url": "https://i.imgur.com/8DajcpK.jpg",
+                "alt_text": "plants"
+              }
+            },
+            {
+              "type": "actions",
+              "elements": [
+                {
+                  "type": "button",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Add Bodyguard",
+                    "emoji": true
+                  },
+                  "value": "addbodyguard",
+                  "action_id": "addbodyguard"
+                },
+                {
+                  "type": "button",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Remove Bodyguard",
+                    "emoji": true
+                  },
+                  "value": "removebodyguard",
+                  "action_id": "removebodyguard"
+                }
+              ]
+            },
+            {
+              "type": "divider"
+            }
+          ]
+        }
