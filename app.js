@@ -401,6 +401,28 @@ app.view("startgame", async ({ ack, body, view, context }) => {
         }
       ]
     });
+    const response5 = await app.client.chat.postMessage({
+      token: context.botToken,
+      channel: setupTable.channelId,
+      text:
+        "*Roles In Play* \n\n_Villagers: "+setupTable.villagers+"_\n_Werewolves: "+setupTable.werewolves+"_\n_Seer: "+setupTable.seers+"_\n_Bodyguard: "+setupTable.bodyguards+"_",
+      blocks: [
+        {
+          type: "divider"
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text:
+              "*Roles In Play* \n\n_Villagers: "+setupTable.villagers+"_\n_Werewolves: "+setupTable.werewolves+"_\n_Seer: "+setupTable.seers+"_\n_Bodyguard: "+setupTable.bodyguards+"_"
+          }
+        },
+        {
+          type: "divider"
+        }
+      ]
+    });
     //remove werewolf bot from players
     let players = setupTable.userArray;
 
