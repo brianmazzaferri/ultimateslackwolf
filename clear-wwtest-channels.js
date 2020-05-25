@@ -52,7 +52,6 @@ async function createNewTestChannel() {
 
 //run functions
 archiveWwtest();
-createNewTestChannel();
 //add test users and werewolf bot
 
 //boilerplate to start the app

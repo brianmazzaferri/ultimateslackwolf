@@ -90,79 +90,79 @@ app.shortcut(
 app.view("selectrolesbutton", async ({ ack, body, view, context }) => {
   try {
     await ack();
-    const response = await app.client.conversations.create({
-      token: context.botToken,
-      name: view.state.values.channelblock.channelname.value
-    });
-    console.log(response.channel.id);
-    console.log(view.state.values.usersblock.userstoadd.selected_users);
     let userArray = view.state.values.usersblock.userstoadd.selected_users;
-    userArray.forEach(async user => {
-      const response2 = await app.client.conversations.invite({
-        token: context.botToken,
-        channel: response.channel.id,
-        users: user
-      });
+    //clear out the database for new game
+    db.remove({}, { multi: true }, function(err) {
+      if (err) console.log("There's a problem with the database: ", err);
+      else console.log("database cleared");
     });
     //create a table to represent role selection
     let setupTable = {
       datatype: "setup",
-      gameid: null,
-      villagers: 3,
+      channelId: null,
+      channelName: view.state.values.channelblock.channelname.value,
+      userArray: userArray,
+      villagers: userArray.length - 3,
       werewolves: 1,
       seers: 1,
       bodyguards: 1,
-      players: 6
+      players: userArray.length,
+      balancescore: userArray.length + 1
     };
     //insert setupTable
     db.insert(setupTable, (err, newDoc) => {
       if (err) console.log("There's a problem with the database ", err);
       else if (newDoc) console.log("setupTable insert completed");
     });
+    //build modal function, using role-setup-modal.json
+    const modal = buildRoleSelectModal(
+      setupTable.balancescore,
+      setupTable.villagers,
+      setupTable.werewolves,
+      setupTable.seers,
+      setupTable.bodyguards
+    );
+    const response2 = await app.client.views.open({
+      token: context.botToken,
+      trigger_id: body.trigger_id,
+      view: modal
+    });
   } catch (error) {
     console.log(error);
   }
 });
 
-// When werewolf bot added to a channel, message channel with start game button
-app.event("member_joined_channel", async ({ event, context }) => {
+app.action("addwerewolf", async ({ ack, body, context }) => {
+  await ack();
   try {
-    console.log(event.user);
-    let userName = await lookupPlayerName(event.user);
-    console.log(userName);
-    if (userName === "Slackwolf Moderator") {
-      const result = await app.client.chat.postMessage({
+    //query setupTable
+    let setupTable = await queryOne({ datatype: "setup" });
+    //run logic to ensure valid add, then change data and reinsert
+    if (setupTable.villagers > 0) {
+      setupTable.villagers--;
+      setupTable.werewolves++;
+      setupTable.balancescore = setupTable.balancescore - 7;
+      db.update(
+        { datatype: "setup" },
+        setupTable,
+        {},
+        (err, numReplaced, affectedDocuments) => {
+          if (err) console.log("There's a problem with the database: ", err);
+          else if (numReplaced) console.log("werewolf added");
+        }
+      );
+      //call function to assemble modal
+      const modal = buildRoleSelectModal(
+        setupTable.balancescore,
+        setupTable.villagers,
+        setupTable.werewolves,
+        setupTable.seers,
+        setupTable.bodyguards
+      );
+      const response = await app.client.views.update({
         token: context.botToken,
-        channel: event.channel,
-        text:
-          "Once everyone is in the channel, click the button below to start!",
-        blocks: [
-          {
-            type: "section",
-            text: {
-              type: "plain_text",
-              text:
-                "Once everyone is in the channel, click the button below to start!",
-              emoji: true
-            }
-          },
-          {
-            type: "actions",
-            elements: [
-              {
-                type: "button",
-                text: {
-                  type: "plain_text",
-                  emoji: true,
-                  text: "Start Game"
-                },
-                style: "primary",
-                value: "startgame",
-                action_id: "startgame"
-              }
-            ]
-          }
-        ]
+        view_id: body.view.id,
+        view: modal
       });
     }
   } catch (error) {
@@ -170,15 +170,218 @@ app.event("member_joined_channel", async ({ event, context }) => {
   }
 });
 
-//listen for the start game button, and begin the game
-app.action("startgame", async ({ ack, body, context }) => {
+app.action("addseer", async ({ ack, body, context }) => {
   await ack();
   try {
-    //hide start button
-    let response4 = await app.client.chat.update({
+    //query setupTable
+    let setupTable = await queryOne({ datatype: "setup" });
+    //run logic to ensure valid add, then change data and reinsert
+    if (setupTable.villagers > 0 && setupTable.seers == 0) {
+      setupTable.villagers--;
+      setupTable.seers++;
+      setupTable.balancescore = setupTable.balancescore + 5;
+      db.update(
+        { datatype: "setup" },
+        setupTable,
+        {},
+        (err, numReplaced, affectedDocuments) => {
+          if (err) console.log("There's a problem with the database: ", err);
+          else if (numReplaced) console.log("seer added");
+        }
+      );
+      //call function to assemble modal
+      const modal = buildRoleSelectModal(
+        setupTable.balancescore,
+        setupTable.villagers,
+        setupTable.werewolves,
+        setupTable.seers,
+        setupTable.bodyguards
+      );
+      const response = await app.client.views.update({
+        token: context.botToken,
+        view_id: body.view.id,
+        view: modal
+      });
+    }
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.action("addbodyguard", async ({ ack, body, context }) => {
+  await ack();
+  try {
+    //query setupTable
+    let setupTable = await queryOne({ datatype: "setup" });
+    //run logic to ensure valid add, then change data and reinsert
+    if (setupTable.villagers > 0 && setupTable.bodyguards == 0) {
+      setupTable.villagers--;
+      setupTable.bodyguards++;
+      setupTable.balancescore = setupTable.balancescore + 2;
+      db.update(
+        { datatype: "setup" },
+        setupTable,
+        {},
+        (err, numReplaced, affectedDocuments) => {
+          if (err) console.log("There's a problem with the database: ", err);
+          else if (numReplaced) console.log("bodyguard added");
+        }
+      );
+      //call function to assemble modal
+      const modal = buildRoleSelectModal(
+        setupTable.balancescore,
+        setupTable.villagers,
+        setupTable.werewolves,
+        setupTable.seers,
+        setupTable.bodyguards
+      );
+      const response = await app.client.views.update({
+        token: context.botToken,
+        view_id: body.view.id,
+        view: modal
+      });
+    }
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.action("removewerewolf", async ({ ack, body, context }) => {
+  await ack();
+  try {
+    //query setupTable
+    let setupTable = await queryOne({ datatype: "setup" });
+    //run logic to ensure valid add, then change data and reinsert
+    if (setupTable.werewolves > 1) {
+      setupTable.villagers++;
+      setupTable.werewolves--;
+      setupTable.balancescore = setupTable.balancescore + 7;
+      db.update(
+        { datatype: "setup" },
+        setupTable,
+        {},
+        (err, numReplaced, affectedDocuments) => {
+          if (err) console.log("There's a problem with the database: ", err);
+          else if (numReplaced) console.log("werewolf removed");
+        }
+      );
+      //call function to assemble modal
+      const modal = buildRoleSelectModal(
+        setupTable.balancescore,
+        setupTable.villagers,
+        setupTable.werewolves,
+        setupTable.seers,
+        setupTable.bodyguards
+      );
+      const response = await app.client.views.update({
+        token: context.botToken,
+        view_id: body.view.id,
+        view: modal
+      });
+    }
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.action("removeseer", async ({ ack, body, context }) => {
+  await ack();
+  try {
+    //query setupTable
+    let setupTable = await queryOne({ datatype: "setup" });
+    //run logic to ensure valid add, then change data and reinsert
+    if (setupTable.seers > 0) {
+      setupTable.villagers++;
+      setupTable.seers--;
+      setupTable.balancescore = setupTable.balancescore - 5;
+      db.update(
+        { datatype: "setup" },
+        setupTable,
+        {},
+        (err, numReplaced, affectedDocuments) => {
+          if (err) console.log("There's a problem with the database: ", err);
+          else if (numReplaced) console.log("seer removed");
+        }
+      );
+      //call function to assemble modal
+      const modal = buildRoleSelectModal(
+        setupTable.balancescore,
+        setupTable.villagers,
+        setupTable.werewolves,
+        setupTable.seers,
+        setupTable.bodyguards
+      );
+      const response = await app.client.views.update({
+        token: context.botToken,
+        view_id: body.view.id,
+        view: modal
+      });
+    }
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.action("removebodyguard", async ({ ack, body, context }) => {
+  await ack();
+  try {
+    //query setupTable
+    let setupTable = await queryOne({ datatype: "setup" });
+    //run logic to ensure valid add, then change data and reinsert
+    if (setupTable.bodyguards > 0) {
+      setupTable.villagers++;
+      setupTable.bodyguards--;
+      setupTable.balancescore = setupTable.balancescore - 2;
+      db.update(
+        { datatype: "setup" },
+        setupTable,
+        {},
+        (err, numReplaced, affectedDocuments) => {
+          if (err) console.log("There's a problem with the database: ", err);
+          else if (numReplaced) console.log("bodyguard removed");
+        }
+      );
+      //call function to assemble modal
+      const modal = buildRoleSelectModal(
+        setupTable.balancescore,
+        setupTable.villagers,
+        setupTable.werewolves,
+        setupTable.seers,
+        setupTable.bodyguards
+      );
+      const response = await app.client.views.update({
+        token: context.botToken,
+        view_id: body.view.id,
+        view: modal
+      });
+    }
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+//once the role setup modal has been submitted, begin the game
+app.view("startgame", async ({ ack, body, view, context }) => {
+  await ack();
+  try {
+    let setupTable = await queryOne({ datatype: "setup" });
+    //game begin message
+    const response = await app.client.conversations.create({
       token: context.botToken,
-      ts: body.message.ts,
-      channel: body.channel.id,
+      name: setupTable.channelName
+    });
+    setupTable.channelId = response.channel.id;
+    db.update({datatype:"setup"},setupTable);
+    await setupTable.userArray.forEach(async user => {
+      const response2 = await app.client.conversations.invite({
+        token: context.botToken,
+        channel: response.channel.id,
+        users: user
+      });
+    });
+    const response4 = await app.client.chat.postMessage({
+      token: context.botToken,
+      channel: setupTable.channelId,
       text:
         "*Let the game begin!* \n\n_The Rules_\nEach night, the werewolf will select someone to eat. Each day, the villagers will try to accuse and kill the werewolf. \nThe werewolf wins if they eat all the villagers. The villagers win if they catch and kill the werewolf.\n \nThere are also villagers with special powers: \nThe *bodyguard* chooses someone to protect each night, and they may not be eaten by the werewolf. \nThe *seer* chooses someone to investigate each night, and finds out if that person is a villager or a werewolf.",
       blocks: [
@@ -198,64 +401,50 @@ app.action("startgame", async ({ ack, body, context }) => {
         }
       ]
     });
+    //remove werewolf bot from players
+    let players = setupTable.userArray;
 
-    //set gameid based on the channel
-    const gameid = body.channel.id;
-    //get user ids from the members of the channel when button is clicked
-    const response = await app.client.conversations.members({
-      token: context.botToken,
-      channel: body.channel.id
+    //build player list into an array ready to be pushed into a database
+    let playerArray = [];
+    await players.forEach(async player => {
+      const response3 = await app.client.users.profile.get({
+        token: process.env.SLACK_BOT_TOKEN,
+        user: player
+      });
+      await playerArray.push({
+        datatype: "player",
+        player: player,
+        name: response3.profile.real_name,
+        roll: Math.random(),
+        gameid: setupTable.channelId,
+        status: "alive",
+        role: "villager",
+        spec: "none"
+      });
+      await console.log("playerPushed");
+      //insert playerArray into database
     });
-    //check if a game with this channel id already exists in the database, and if so, ignore this button push
-    let gameexists = await queryOne({ datatype: "game", gameid: gameid });
-    let werewolfBotId = await getWerewolfBotId();
-    if (!gameexists) {
-      //remove werewolf bot from players
-      let players = response.members.filter(member => member !== werewolfBotId);
-      //clear out the database for new game
-      db.remove({}, { multi: true }, function(err) {
+
+    //JANK CITY TO USE SETTIMEOUT. FIX THIS AT SOME POINT
+    setTimeout(async () => {
+      await db.insert(playerArray, (err, newDoc) => {
         if (err) console.log("There's a problem with the database: ", err);
-        else console.log("database cleared");
+        else if (newDoc) console.log("initial player insert completed");
       });
-
-      //build player list into an array ready to be pushed into a database
-      let playerArray = [];
-      await players.forEach(async player => {
-        const response3 = await app.client.users.profile.get({
-          token: process.env.SLACK_BOT_TOKEN,
-          user: player
-        });
-        await playerArray.push({
-          datatype: "player",
-          player: player,
-          name: response3.profile.real_name,
-          roll: Math.random(),
-          gameid: gameid,
-          status: "alive",
-          role: "villager",
-          spec: "none"
-        });
-        await console.log("playerPushed");
-      });
-
-      //JANK CITY TO USE SETTIMEOUT. FIX THIS AT SOME POINT
-      setTimeout(async () => {
-        //set werewolf id
+      let villagers;
+      //set werewolves
+      let i;
+      for (i = 0; i < setupTable.werewolves; i++) {
+        villagers = await query({ role: "villager" });
         let w = 1;
         let wid;
-        playerArray.forEach(player => {
+        villagers.forEach(player => {
           if (player.roll < w) {
             w = player.roll;
             wid = player.player;
           }
         });
         console.log("wid: " + wid);
-
-        //insert data into database
-        db.insert(playerArray, (err, newDoc) => {
-          if (err) console.log("There's a problem with the database: ", err);
-          else if (newDoc) console.log("initial player insert completed");
-        });
 
         //update werewolf player's role
         db.update(
@@ -267,9 +456,10 @@ app.action("startgame", async ({ ack, body, context }) => {
             else if (numReplaced) console.log("werewolf assigned");
           }
         );
-
-        //query players & set seer
-        let villagers = await query({ role: "villager" });
+      }
+      //query players & set seer
+      for (i = 0; i < setupTable.seers; i++) {
+        villagers = await query({ role: "villager" });
         let s = 1;
         let sid;
         villagers.forEach(villager => {
@@ -287,12 +477,13 @@ app.action("startgame", async ({ ack, body, context }) => {
             else if (numReplaced) console.log("seer assigned");
           }
         );
-
-        //query players & set bodyguard
-        let villagers2 = await query({ role: "villager", spec: "none" });
+      }
+      //query players & set bodyguard
+      for (i = 0; i < setupTable.bodyguards; i++) {
+        villagers = await query({ role: "villager", spec: "none" });
         let b = 1;
         let bid;
-        villagers2.forEach(villager => {
+        villagers.forEach(villager => {
           if (villager.roll < b) {
             b = villager.roll;
             bid = villager.player;
@@ -307,57 +498,57 @@ app.action("startgame", async ({ ack, body, context }) => {
             else if (numReplaced) console.log("bodyguard assigned");
           }
         );
+      }
+      //set up game "table" in the database
+      let gameTable = {
+        datatype: "game",
+        gameid: setupTable.channelId,
+        round: 0,
+        werewolves: setupTable.werewolves,
+        players: setupTable.players,
+        villagers: setupTable.villagers,
+        channel: setupTable.channelId
+      };
 
-        //set up game "table" in the database
-        let gameTable = {
-          datatype: "game",
-          gameid: gameid,
-          round: 0,
-          werewolves: 1,
-          players: players.length,
-          villagers: players.length - 1,
-          channel: body.channel.id
-        };
+      //insert gameTable
+      db.insert(gameTable, (err, newDoc) => {
+        if (err) console.log("There's a problem with the database ", err);
+        else if (newDoc) console.log("gameTable insert completed");
+      });
 
-        //insert gameTable
-        db.insert(gameTable, (err, newDoc) => {
-          if (err) console.log("There's a problem with the database ", err);
-          else if (newDoc) console.log("gameTable insert completed");
+      //set up roundTable
+      let roundTable = {
+        datatype: "round",
+        round: 0,
+        livingPlayers:
+          (await countLivingVillagers()) + (await countLivingWerewolves()),
+        votedPlayers: 0,
+        accused: "",
+        livevotes: 0,
+        dievotes: 0,
+        accusations: 0,
+        accusationArray: [],
+        accuserArray: [],
+        status: "in progress",
+        protected: ""
+      };
+      // insert round record
+      await db.insert(roundTable, (err, docs) => {
+        if (err) console.log("There's a problem with the database: ", err);
+        else if (docs) console.log("round table inserted");
+      });
+
+      //distribute roles
+      setTimeout(async () => {
+        let playerArray = await query({ datatype: "player" });
+        playerArray.forEach(async player => {
+          await distributeRolesViaDM(player.player, player.role, player.spec);
         });
-
-        //set up roundTable
-        let roundTable = {
-          datatype: "round",
-          round: 0,
-          livingPlayers:
-            (await countLivingVillagers()) + (await countLivingWerewolves()),
-          votedPlayers: 0,
-          accused: "",
-          livevotes: 0,
-          dievotes: 0,
-          accusations: 0,
-          accusationArray: [],
-          accuserArray: [],
-          status: "in progress",
-          protected: ""
-        };
-        // insert round record
-        await db.insert(roundTable, (err, docs) => {
-          if (err) console.log("There's a problem with the database: ", err);
-          else if (docs) console.log("round table inserted");
-        });
-
-        //distribute roles
-        setTimeout(async () => {
-          let playerArray = await query({ datatype: "player" });
-          playerArray.forEach(async player => {
-            await distributeRolesViaDM(player.player, player.role, player.spec);
-          });
-        }, 500);
-
-        startNightRound();
       }, 500);
-    }
+      //create the werewolf channel
+      updateWerewolfChannel();
+      startNightRound();
+    }, 500);
   } catch (error) {
     console.error(error);
   }
@@ -374,7 +565,6 @@ app.action("killSelect", async ({ ack, body, context }) => {
         datatype: "round",
         status: "in progress"
       });
-      printDatabase();
       if (eatenPerson !== currentRound.protected) {
         killVillager(eatenPerson);
       } else {
@@ -425,6 +615,9 @@ app.action("bodyguardSelect", async ({ ack, body, context }) => {
         ]
       });
       let seer = await queryOne({ spec: "seer" });
+      if (!seer){
+        seer = {status:"none"}
+      }
       if (seer.status === "alive") {
         sendSeerSelector();
       } else {
@@ -874,6 +1067,34 @@ app.action("submitvote", async ({ ack, body, context }) => {
 
 //FUNCTIONS BELOW HERE
 
+//build role selection modal
+function buildRoleSelectModal(score, villagers, werewolves, seers, bodyguards) {
+  const obj = require("./modals/role-setup-modal");
+  //set gamescore
+  obj.blocks[1].text.text = "*Current Game Balance Score: " + score + "*";
+  //set villager text
+  obj.blocks[3].text.text =
+    "*Villagers : " +
+    villagers +
+    "*\nThe standard good role, these players have no special powers. Their goal is to catch and kill the werewolf, while avoiding killing innocents.\n_+1 Points Each_";
+  //set werewolf text
+  obj.blocks[5].text.text =
+    "*Werewolves : " +
+    werewolves +
+    "*\nThe standard bad role, these players will be trying to eat the villagers and lying through their teeth the whole game. \n_-6 Points Each_";
+  //set seer text
+  obj.blocks[8].text.text =
+    "*Seers : " +
+    seers +
+    "*\nThese are special villagers who have the power to investigate one other living player per round to find out if they're a werewolf.\n_+7 Points Each (Maximum 1)_";
+  //set bodyguard text
+  obj.blocks[11].text.text =
+    "*Bodyguards : " +
+    bodyguards +
+    "*\nThese are special villagers who have the power to protect one other living player each night, preventing them from being eaten.\n_+3 Points Each (Maximum 1)_";
+  return obj;
+}
+
 //end day round
 async function endDayRound(verdict) {
   if (verdict === "live") {
@@ -949,8 +1170,22 @@ async function endDayRound(verdict) {
 async function villageKillAccused() {
   let accused = await getAccusedFromRoundTable();
   let accusedRole = await getAccusedRole(accused);
-  if (accusedRole === "werewolf") {
+  let livingWerewolves = await query({role:"werewolf",status:"alive"});
+  if (accusedRole === "werewolf" && livingWerewolves.length == 1) {
+    let response3 = await app.client.chat.postMessage({
+      token: process.env.SLACK_BOT_TOKEN,
+      channel: await getGameChannel(),
+      text: "They were indeed a werewolf!! Which means that..."
+    });
     endGame("village");
+  } else if (accusedRole === "werewolf"){
+    let response2 = await app.client.chat.postMessage({
+      token: process.env.SLACK_BOT_TOKEN,
+      channel: await getGameChannel(),
+      text: "They were indeed a werewolf!! But they weren't the last one..."
+    });
+    await killVillager(accused);
+    await startNightRound();
   } else {
     let response = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
@@ -971,8 +1206,6 @@ async function tallyVote(vote) {
   else if (vote === "die") currentRound.dievotes++;
   await updateRoundTable(currentRound);
   //check if it was the last vote of the round, and if so run endDayRound function
-  console.log("ROUND TABLE CURRENTLY IS");
-  console.log(currentRound);
   if (currentRound.votedPlayers == currentRound.livingPlayers) {
     let verdict;
     if (currentRound.livevotes >= currentRound.dievotes) {
@@ -1245,7 +1478,16 @@ async function startNightRound() {
     ]
   });
   let bodyguard = await queryOne({ spec: "bodyguard" });
+  console.log("BODYGUARD");
+  console.log(bodyguard);
+  if (!bodyguard){
+    bodyguard = {status:"none"};
+  }
+  console.log(bodyguard);
   let seer = await queryOne({ spec: "seer" });
+  if (!seer){
+    seer = {status:"none"};
+  }
   if (bodyguard.status === "alive") {
     sendBodyguardSelector();
   } else if (seer.status === "alive") {
@@ -1366,12 +1608,12 @@ async function sendKillSelector() {
   setTimeout(async () => {
     const response4 = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
-      channel: await getWerewolf(),
+      channel: await updateWerewolfChannel(),
       text: "It's time to dine! Use the selector below to eat someone:"
     });
     const response2 = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
-      channel: await getWerewolf(),
+      channel: await updateWerewolfChannel(),
       text: "Choose someone to eat tonight",
       blocks: [
         {
@@ -1536,8 +1778,8 @@ function getAccusedFromRoundTable() {
   });
 }
 
-//werewolf database lookup returns user id
-function getWerewolf() {
+//werewolf database lookup returns user id (no longer used??)
+/*function getWerewolf() {
   return new Promise((resolve, reject) => {
     db.findOne({ role: "werewolf" }, { player: 1, _id: 0 }, (err, docs) => {
       if (err) console.log("There's a problem with the database ", err);
@@ -1545,17 +1787,16 @@ function getWerewolf() {
       resolve(docs.player);
     });
   });
-}
+}*/
 
-//werewolf database lookup returns name
-function getWerewolfName() {
-  return new Promise((resolve, reject) => {
-    db.findOne({ role: "werewolf" }, { name: 1, _id: 0 }, (err, docs) => {
-      if (err) console.log("There's a problem with the database ", err);
-      else if (docs) console.log("getWerewolfName query completed");
-      resolve(docs.name);
-    });
+//werewolf database lookup returns names
+async function getWerewolfNames() {
+  let werewolves = await query({role:"werewolf"});
+  let werewolfNameArray = [];
+  werewolves.forEach(wolf => {
+    werewolfNameArray.push(wolf.name);
   });
+  return werewolfNameArray.join();
 }
 
 //living villagers lookup returns names
@@ -1838,9 +2079,7 @@ async function endGame(winner) {
       token: process.env.SLACK_BOT_TOKEN,
       channel: await getGameChannel(),
       text:
-        "*The Village Wins!*\n" +
-        (await getWerewolfName()) +
-        " was a werewolf! The werewolves have been vanquished, and the (surviving) villagers rejoice in their victory.",
+        "*The Village Wins!*\nThe werewolves have been vanquished, and the (surviving) villagers rejoice in their victory. The werewolves were:\n"+await getWerewolfNames(),
       blocks: [
         {
           type: "divider"
@@ -1850,9 +2089,7 @@ async function endGame(winner) {
           text: {
             type: "mrkdwn",
             text:
-              "*The Village Wins!*\n" +
-              (await getWerewolfName()) +
-              " was a werewolf! The werewolves have been vanquished, and the (surviving) villagers rejoice in their victory."
+              "*The Village Wins!*\nThe werewolves have been vanquished, and the (surviving) villagers rejoice in their victory. The werewolves were:\n"+await getWerewolfNames()
           },
           accessory: {
             type: "image",
@@ -1870,9 +2107,7 @@ async function endGame(winner) {
       token: process.env.SLACK_BOT_TOKEN,
       channel: await getGameChannel(),
       text:
-        "*The Werewolves Win!*\n" +
-        (await getWerewolfName()) +
-        " was the Werewolf, and they have succeeded in eating all of the Villagers",
+        "*The Werewolves Win!*\nThese were the Werewolves, and they have succeeded in eating all of the Villagers:\n"+await getWerewolfNames(),
       blocks: [
         {
           type: "divider"
@@ -1882,9 +2117,7 @@ async function endGame(winner) {
           text: {
             type: "mrkdwn",
             text:
-              "*The Werewolves Win!*\n" +
-              (await getWerewolfName()) +
-              " was the Werewolf, and they have succeeded in eating all of the Villagers"
+              "*The Werewolves Win!*\nThese were the Werewolves, and they have succeeded in eating all of the Villagers:\n"+await getWerewolfNames()
           },
           accessory: {
             type: "image",
@@ -1900,31 +2133,47 @@ async function endGame(winner) {
   }
 }
 
+//update werewolf channel
+async function updateWerewolfChannel() {
+  let werewolves = await query({role:"werewolf",status:"alive"});
+  let werewolfArray = [];
+  werewolves.forEach(wolf => {
+    werewolfArray.push(wolf.player);
+  });
+  const response = await app.client.conversations.open({
+    token:process.env.SLACK_BOT_TOKEN,
+    return_im:false,
+    users: werewolfArray.join()
+  });
+  console.log(response.channel.id);
+  let gameTable = await queryOne({datatype:"game"});
+  gameTable.werewolfChannel = response;
+  await db.update({datatype:"game"},gameTable);
+  return response.channel.id;
+}
+
 //boilerplate to start the app
 (async () => {
   await app.start(process.env.PORT || 3000);
+  //villageKillAccused();
   //printDatabase();
   console.log("⚡️ Bolt app is running!");
 })();
 
 /* TO DO LIST
 
-in progress:
-start game modal is popping, submit button creates new channel and adds selected users.
-need to have it set up the gametable and display roles based on that somehow.
-
 bugs:
-make sure nothing can get double-sent due to timeouts (e.g. starting the day round)
+make sure nothing can get double-sent due to timeouts (e.g. starting the day round) (maybe resolved using plus?)
 
 ops:
 
 v2:
-add multiple werewolves
 segment database to work with multiple channels
 
 refactor/cleanup:
 abstract database queries further
 reduce redundancies between accusationSelect and runoffSelect
 make sure the round table actually writes to the correct round
+abstract big / reused blocks (runoff stuff?) into JSON files
 
 */
