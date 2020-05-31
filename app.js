@@ -91,14 +91,11 @@ app.view("selectrolesbutton", async ({ ack, body, view, context }) => {
   try {
     await ack();
     let userArray = view.state.values.usersblock.userstoadd.selected_users;
-    //clear out the database for new game
-    db.remove({}, { multi: true }, function(err) {
-      if (err) console.log("There's a problem with the database: ", err);
-      else console.log("database cleared");
-    });
     //create a table to represent role selection
     let setupTable = {
       datatype: "setup",
+      setupid: view.state.values.channelblock.channelname.value + Math.random().toFixed(15)*1000000000000000,
+      gameid: view.state.values.channelblock.channelname.value + Math.random().toFixed(15)*1000000000000000,
       channelId: null,
       channelName: view.state.values.channelblock.channelname.value,
       userArray: userArray,
@@ -120,7 +117,8 @@ app.view("selectrolesbutton", async ({ ack, body, view, context }) => {
       setupTable.villagers,
       setupTable.werewolves,
       setupTable.seers,
-      setupTable.bodyguards
+      setupTable.bodyguards,
+      setupTable.setupid
     );
     const response2 = await app.client.views.open({
       token: context.botToken,
@@ -136,14 +134,14 @@ app.action("addwerewolf", async ({ ack, body, context }) => {
   await ack();
   try {
     //query setupTable
-    let setupTable = await queryOne({ datatype: "setup" });
+    let setupTable = await queryOne({ datatype: "setup", setupid: body.actions[0].value});
     //run logic to ensure valid add, then change data and reinsert
     if (setupTable.villagers > 0) {
       setupTable.villagers--;
       setupTable.werewolves++;
       setupTable.balancescore = setupTable.balancescore - 7;
       db.update(
-        { datatype: "setup" },
+        { datatype: "setup", setupid: body.actions[0].value },
         setupTable,
         {},
         (err, numReplaced, affectedDocuments) => {
@@ -157,7 +155,8 @@ app.action("addwerewolf", async ({ ack, body, context }) => {
         setupTable.villagers,
         setupTable.werewolves,
         setupTable.seers,
-        setupTable.bodyguards
+        setupTable.bodyguards,
+        setupTable.setupid
       );
       const response = await app.client.views.update({
         token: context.botToken,
@@ -174,14 +173,14 @@ app.action("addseer", async ({ ack, body, context }) => {
   await ack();
   try {
     //query setupTable
-    let setupTable = await queryOne({ datatype: "setup" });
+    let setupTable = await queryOne({ datatype: "setup", setupid: body.actions[0].value});
     //run logic to ensure valid add, then change data and reinsert
     if (setupTable.villagers > 0 && setupTable.seers == 0) {
       setupTable.villagers--;
       setupTable.seers++;
       setupTable.balancescore = setupTable.balancescore + 5;
       db.update(
-        { datatype: "setup" },
+        { datatype: "setup", setupid: body.actions[0].value},
         setupTable,
         {},
         (err, numReplaced, affectedDocuments) => {
@@ -195,7 +194,8 @@ app.action("addseer", async ({ ack, body, context }) => {
         setupTable.villagers,
         setupTable.werewolves,
         setupTable.seers,
-        setupTable.bodyguards
+        setupTable.bodyguards,
+        setupTable.setupid
       );
       const response = await app.client.views.update({
         token: context.botToken,
@@ -212,14 +212,14 @@ app.action("addbodyguard", async ({ ack, body, context }) => {
   await ack();
   try {
     //query setupTable
-    let setupTable = await queryOne({ datatype: "setup" });
+    let setupTable = await queryOne({ datatype: "setup", setupid: body.actions[0].value});
     //run logic to ensure valid add, then change data and reinsert
     if (setupTable.villagers > 0 && setupTable.bodyguards == 0) {
       setupTable.villagers--;
       setupTable.bodyguards++;
       setupTable.balancescore = setupTable.balancescore + 2;
       db.update(
-        { datatype: "setup" },
+        { datatype: "setup", setupid: body.actions[0].value},
         setupTable,
         {},
         (err, numReplaced, affectedDocuments) => {
@@ -233,7 +233,8 @@ app.action("addbodyguard", async ({ ack, body, context }) => {
         setupTable.villagers,
         setupTable.werewolves,
         setupTable.seers,
-        setupTable.bodyguards
+        setupTable.bodyguards,
+        setupTable.setupid
       );
       const response = await app.client.views.update({
         token: context.botToken,
@@ -250,14 +251,14 @@ app.action("removewerewolf", async ({ ack, body, context }) => {
   await ack();
   try {
     //query setupTable
-    let setupTable = await queryOne({ datatype: "setup" });
+    let setupTable = await queryOne({ datatype: "setup", setupid: body.actions[0].value});
     //run logic to ensure valid add, then change data and reinsert
     if (setupTable.werewolves > 1) {
       setupTable.villagers++;
       setupTable.werewolves--;
       setupTable.balancescore = setupTable.balancescore + 7;
       db.update(
-        { datatype: "setup" },
+        {datatype: "setup", setupid: body.actions[0].value},
         setupTable,
         {},
         (err, numReplaced, affectedDocuments) => {
@@ -271,7 +272,8 @@ app.action("removewerewolf", async ({ ack, body, context }) => {
         setupTable.villagers,
         setupTable.werewolves,
         setupTable.seers,
-        setupTable.bodyguards
+        setupTable.bodyguards,
+        setupTable.setupid
       );
       const response = await app.client.views.update({
         token: context.botToken,
@@ -288,14 +290,14 @@ app.action("removeseer", async ({ ack, body, context }) => {
   await ack();
   try {
     //query setupTable
-    let setupTable = await queryOne({ datatype: "setup" });
+    let setupTable = await queryOne({datatype: "setup", setupid: body.actions[0].value});
     //run logic to ensure valid add, then change data and reinsert
     if (setupTable.seers > 0) {
       setupTable.villagers++;
       setupTable.seers--;
       setupTable.balancescore = setupTable.balancescore - 5;
       db.update(
-        { datatype: "setup" },
+        { datatype: "setup", setupid: body.actions[0].value},
         setupTable,
         {},
         (err, numReplaced, affectedDocuments) => {
@@ -309,7 +311,8 @@ app.action("removeseer", async ({ ack, body, context }) => {
         setupTable.villagers,
         setupTable.werewolves,
         setupTable.seers,
-        setupTable.bodyguards
+        setupTable.bodyguards,
+        setupTable.setupid
       );
       const response = await app.client.views.update({
         token: context.botToken,
@@ -326,14 +329,14 @@ app.action("removebodyguard", async ({ ack, body, context }) => {
   await ack();
   try {
     //query setupTable
-    let setupTable = await queryOne({ datatype: "setup" });
+    let setupTable = await queryOne({datatype: "setup", setupid: body.actions[0].value});
     //run logic to ensure valid add, then change data and reinsert
     if (setupTable.bodyguards > 0) {
       setupTable.villagers++;
       setupTable.bodyguards--;
       setupTable.balancescore = setupTable.balancescore - 2;
       db.update(
-        { datatype: "setup" },
+        { datatype: "setup", setupid: body.actions[0].value},
         setupTable,
         {},
         (err, numReplaced, affectedDocuments) => {
@@ -347,7 +350,8 @@ app.action("removebodyguard", async ({ ack, body, context }) => {
         setupTable.villagers,
         setupTable.werewolves,
         setupTable.seers,
-        setupTable.bodyguards
+        setupTable.bodyguards,
+        setupTable.setupid
       );
       const response = await app.client.views.update({
         token: context.botToken,
@@ -364,14 +368,14 @@ app.action("removebodyguard", async ({ ack, body, context }) => {
 app.view("startgame", async ({ ack, body, view, context }) => {
   await ack();
   try {
-    let setupTable = await queryOne({ datatype: "setup" });
+    let setupTable = await queryOne({ datatype: "setup", setupid: body.view.blocks[6].elements[0].value });
     //game begin message
     const response = await app.client.conversations.create({
       token: context.botToken,
       name: setupTable.channelName
     });
     setupTable.channelId = response.channel.id;
-    db.update({datatype:"setup"},setupTable);
+    db.update({ datatype: "setup", setupid: setupTable.setupid }, setupTable);
     await setupTable.userArray.forEach(async user => {
       const response2 = await app.client.conversations.invite({
         token: context.botToken,
@@ -405,7 +409,15 @@ app.view("startgame", async ({ ack, body, view, context }) => {
       token: context.botToken,
       channel: setupTable.channelId,
       text:
-        "*Roles In Play* \n\n_Villagers: "+setupTable.villagers+"_\n_Werewolves: "+setupTable.werewolves+"_\n_Seer: "+setupTable.seers+"_\n_Bodyguard: "+setupTable.bodyguards+"_",
+        "*Roles In Play* \n\n_Villagers: " +
+        setupTable.villagers +
+        "_\n_Werewolves: " +
+        setupTable.werewolves +
+        "_\n_Seer: " +
+        setupTable.seers +
+        "_\n_Bodyguard: " +
+        setupTable.bodyguards +
+        "_",
       blocks: [
         {
           type: "divider"
@@ -415,7 +427,15 @@ app.view("startgame", async ({ ack, body, view, context }) => {
           text: {
             type: "mrkdwn",
             text:
-              "*Roles In Play* \n\n_Villagers: "+setupTable.villagers+"_\n_Werewolves: "+setupTable.werewolves+"_\n_Seer: "+setupTable.seers+"_\n_Bodyguard: "+setupTable.bodyguards+"_"
+              "*Roles In Play* \n\n_Villagers: " +
+              setupTable.villagers +
+              "_\n_Werewolves: " +
+              setupTable.werewolves +
+              "_\n_Seer: " +
+              setupTable.seers +
+              "_\n_Bodyguard: " +
+              setupTable.bodyguards +
+              "_"
           }
         },
         {
@@ -423,9 +443,7 @@ app.view("startgame", async ({ ack, body, view, context }) => {
         }
       ]
     });
-    //remove werewolf bot from players
     let players = setupTable.userArray;
-
     //build player list into an array ready to be pushed into a database
     let playerArray = [];
     await players.forEach(async player => {
@@ -438,7 +456,7 @@ app.view("startgame", async ({ ack, body, view, context }) => {
         player: player,
         name: response3.profile.real_name,
         roll: Math.random(),
-        gameid: setupTable.channelId,
+        gameid: setupTable.setupid,
         status: "alive",
         role: "villager",
         spec: "none"
@@ -457,7 +475,7 @@ app.view("startgame", async ({ ack, body, view, context }) => {
       //set werewolves
       let i;
       for (i = 0; i < setupTable.werewolves; i++) {
-        villagers = await query({ role: "villager" });
+        villagers = await query({ role: "villager", gameid: setupTable.setupid });
         let w = 1;
         let wid;
         villagers.forEach(player => {
@@ -470,7 +488,7 @@ app.view("startgame", async ({ ack, body, view, context }) => {
 
         //update werewolf player's role
         db.update(
-          { player: wid },
+          { player: wid, gameid: setupTable.setupid },
           { $set: { role: "werewolf" } },
           { returnUpdatedDocs: true },
           (err, numReplaced, affectedDocuments) => {
@@ -481,7 +499,7 @@ app.view("startgame", async ({ ack, body, view, context }) => {
       }
       //query players & set seer
       for (i = 0; i < setupTable.seers; i++) {
-        villagers = await query({ role: "villager" });
+        villagers = await query({ role: "villager", gameid: setupTable.setupid  });
         let s = 1;
         let sid;
         villagers.forEach(villager => {
@@ -492,7 +510,7 @@ app.view("startgame", async ({ ack, body, view, context }) => {
         });
 
         db.update(
-          { player: sid },
+          { player: sid, gameid: setupTable.setupid  },
           { $set: { spec: "seer" } },
           (err, numReplaced) => {
             if (err) console.log("There's a problem with the database: ", err);
@@ -502,7 +520,7 @@ app.view("startgame", async ({ ack, body, view, context }) => {
       }
       //query players & set bodyguard
       for (i = 0; i < setupTable.bodyguards; i++) {
-        villagers = await query({ role: "villager", spec: "none" });
+        villagers = await query({ role: "villager", spec: "none", gameid: setupTable.setupid  });
         let b = 1;
         let bid;
         villagers.forEach(villager => {
@@ -513,7 +531,7 @@ app.view("startgame", async ({ ack, body, view, context }) => {
         });
 
         db.update(
-          { player: bid },
+          { player: bid , gameid: setupTable.setupid },
           { $set: { spec: "bodyguard" } },
           (err, numReplaced) => {
             if (err) console.log("There's a problem with the database: ", err);
@@ -524,7 +542,7 @@ app.view("startgame", async ({ ack, body, view, context }) => {
       //set up game "table" in the database
       let gameTable = {
         datatype: "game",
-        gameid: setupTable.channelId,
+        gameid: setupTable.setupid,
         round: 0,
         werewolves: setupTable.werewolves,
         players: setupTable.players,
@@ -541,9 +559,9 @@ app.view("startgame", async ({ ack, body, view, context }) => {
       //set up roundTable
       let roundTable = {
         datatype: "round",
+        gameid: setupTable.setupid,
         round: 0,
-        livingPlayers:
-          (await countLivingVillagers()) + (await countLivingWerewolves()),
+        livingPlayers:setupTable.players,
         votedPlayers: 0,
         accused: "",
         livevotes: 0,
@@ -562,14 +580,12 @@ app.view("startgame", async ({ ack, body, view, context }) => {
 
       //distribute roles
       setTimeout(async () => {
-        let playerArray = await query({ datatype: "player" });
+        let playerArray = await query({ datatype: "player", gameid: setupTable.setupid });
         playerArray.forEach(async player => {
-          await distributeRolesViaDM(player.player, player.role, player.spec);
+          await distributeRolesViaDM(player.player, player.role, player.spec, setupTable.setupid);
         });
       }, 500);
-      //create the werewolf channel
-      updateWerewolfChannel();
-      startNightRound();
+      startNightRound(setupTable.setupid);
     }, 500);
   } catch (error) {
     console.error(error);
@@ -580,15 +596,16 @@ app.view("startgame", async ({ ack, body, view, context }) => {
 app.action("killSelect", async ({ ack, body, context }) => {
   await ack();
   try {
-    if (body.actions[0].block_id === (await getGameChannel())) {
+      let gameid = body.actions[0].block_id;
       let eatenPerson = body.actions[0].selected_option.value;
       //call function to update their status in database to dead
       let currentRound = await queryOne({
         datatype: "round",
-        status: "in progress"
+        status: "in progress",
+        gameid:gameid
       });
       if (eatenPerson !== currentRound.protected) {
-        killVillager(eatenPerson);
+        killVillager(eatenPerson, gameid);
       } else {
         eatenPerson = false;
       }
@@ -606,8 +623,7 @@ app.action("killSelect", async ({ ack, body, context }) => {
           }
         ]
       });
-      startDayRound(eatenPerson);
-    }
+      startDayRound(eatenPerson, gameid);
   } catch (error) {
     console.error(error);
   }
@@ -616,12 +632,12 @@ app.action("killSelect", async ({ ack, body, context }) => {
 //listen for the bodyguard selection, and protect someone
 app.action("bodyguardSelect", async ({ ack, body, context }) => {
   await ack();
+  let gameid = body.actions[0].block_id;
   try {
-    if (body.actions[0].block_id === (await getGameChannel())) {
       let protectedPerson = body.actions[0].selected_option.value;
-      let game = await queryOne({ datatype: "game" });
+      let game = await queryOne({ datatype: "game", gameid:gameid});
       //call function to mark them as protected
-      protectVillager(protectedPerson, game.round);
+      protectVillager(protectedPerson, game.round, gameid);
       let response = await app.client.chat.update({
         token: context.botToken,
         ts: body.message.ts,
@@ -636,16 +652,15 @@ app.action("bodyguardSelect", async ({ ack, body, context }) => {
           }
         ]
       });
-      let seer = await queryOne({ spec: "seer" });
-      if (!seer){
-        seer = {status:"none"}
+      let seer = await queryOne({ spec: "seer",gameid:gameid });
+      if (!seer) {
+        seer = { status: "none" };
       }
       if (seer.status === "alive") {
-        sendSeerSelector();
+        sendSeerSelector(gameid);
       } else {
-        sendKillSelector();
+        sendKillSelector(gameid);
       }
-    }
   } catch (error) {
     console.error(error);
   }
@@ -654,9 +669,9 @@ app.action("bodyguardSelect", async ({ ack, body, context }) => {
 app.action("seerSelect", async ({ ack, body, context }) => {
   await ack();
   try {
-    if (body.actions[0].block_id === (await getGameChannel())) {
+      let gameid = body.actions[0].block_id;
       let examinedPerson = body.actions[0].selected_option.value;
-      let examinedData = await queryOne({ name: examinedPerson });
+      let examinedData = await queryOne({ name: examinedPerson,gameid:gameid });
       let response = await app.client.chat.update({
         token: context.botToken,
         ts: body.message.ts,
@@ -672,8 +687,7 @@ app.action("seerSelect", async ({ ack, body, context }) => {
         ]
       });
       console.log("investigation completed");
-      sendKillSelector();
-    }
+      sendKillSelector(gameid);
   } catch (error) {
     console.error(error);
   }
@@ -683,7 +697,7 @@ app.action("seerSelect", async ({ ack, body, context }) => {
 app.action("accusationSelect", async ({ ack, body, context }) => {
   await ack();
   try {
-    //    db.update({datatype:"round",round:0},{$set:{status:"complete"}});
+    let gameid = body.actions[0].block_id;
     let response4 = await app.client.chat.update({
       token: context.botToken,
       ts: body.message.ts,
@@ -699,11 +713,12 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
       ]
     });
     let accusedName = body.actions[0].selected_option.value;
-    let accuserStatus = await checkAccuserStatus(body.user.id);
+    let accuserStatus = await checkAccuserStatus(body.user.id, gameid);
     //get roundTable
     let roundTable = await queryOne({
       datatype: "round",
-      status: "in progress"
+      status: "in progress",
+      gameid:gameid
     });
     if (accuserStatus === "dead") {
       let response = await app.client.chat.postMessage({
@@ -720,9 +735,9 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
     } else {
       let response = await app.client.chat.postMessage({
         token: context.botToken,
-        channel: await getGameChannel(),
+        channel: await getGameChannel(gameid),
         text:
-          (await playerNameFromId(body.user.id)) +
+          (await playerNameFromId(body.user.id,gameid)) +
           " has accused " +
           accusedName +
           " of being a Werewolf!",
@@ -732,7 +747,7 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
             text: {
               type: "mrkdwn",
               text:
-                (await playerNameFromId(body.user.id)) +
+                (await playerNameFromId(body.user.id,gameid)) +
                 " has accused " +
                 accusedName +
                 " of being a Werewolf!"
@@ -743,14 +758,14 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
       roundTable.accusations++;
       roundTable.accusationArray.push(accusedName);
       roundTable.accuserArray.push(body.user.id);
-      await updateRoundTable(roundTable);
+      await updateRoundTable(roundTable,gameid);
       console.log(roundTable);
       console.log(
-        (await countLivingVillagers()) + (await countLivingWerewolves())
+        (await countLivingVillagers(gameid)) + (await countLivingWerewolves(gameid))
       );
       if (
         roundTable.accusations ==
-        (await countLivingVillagers()) + (await countLivingWerewolves())
+        (await countLivingVillagers(gameid)) + (await countLivingWerewolves(gameid))
       ) {
         //move on to full live/die voting
         let votesObj = {};
@@ -762,7 +777,7 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
         });
         let response4 = await app.client.chat.postMessage({
           token: context.botToken,
-          channel: await getGameChannel(),
+          channel: await getGameChannel(gameid),
           text: "*Accusations have been leveled!*",
           blocks: [
             {
@@ -785,7 +800,7 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
         for (const property in votesObj) {
           let response = await app.client.chat.postMessage({
             token: context.botToken,
-            channel: await getGameChannel(),
+            channel: await getGameChannel(gameid),
             text: `${property}: ${votesObj[property]} votes`
           });
           if (votesObj[property] > finalAccusedVotes) {
@@ -799,7 +814,7 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
         if (getMax(votesObj).length == 1) {
           let response3 = await app.client.chat.postMessage({
             token: context.botToken,
-            channel: await getGameChannel(),
+            channel: await getGameChannel(gameid),
             text: `${finalAccused} stands accused of being a werewolf. They should now offer their last statement, and the village will vote on whether they live or die.`,
             blocks: [
               {
@@ -825,10 +840,10 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
               }
             ]
           });
-          await updateAccusedInRoundTable(finalAccused);
-          let livingVillagerArray = await getLivingVillagersPlusWerewolfId();
+          await updateAccusedInRoundTable(finalAccused,gameid);
+          let livingVillagerArray = await getLivingVillagersPlusWerewolfId(gameid);
           livingVillagerArray.forEach(player => {
-            distributeVotingButtons(player.player, finalAccused);
+            distributeVotingButtons(player.player, finalAccused,gameid);
           });
         } else {
           let killArray = [];
@@ -838,7 +853,7 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
           });
           const response3 = await app.client.chat.postMessage({
             token: process.env.SLACK_BOT_TOKEN,
-            channel: await getGameChannel(),
+            channel: await getGameChannel(gameid),
             text:
               "*The vote is tied!*\nThere will now be a runoff round of accusations. If there is another tie, the village does not kill anyone today and the next night round will begin.",
             blocks: [
@@ -863,12 +878,13 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
               }
             ]
           });
-          let livingVillagerArray = await getLivingVillagersPlusWerewolfId();
+          let livingVillagerArray = await getLivingVillagersPlusWerewolfId(gameid);
           livingVillagerArray.forEach(player => {
             distributeAccusationButtons(
               player.player,
               killArray,
-              "runoffSelect"
+              "runoffSelect",
+              gameid
             );
           });
           console.log(roundTable);
@@ -894,6 +910,7 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
 //listen for a runoff accusation, check to make sure the person isn't dead, and start the voting
 app.action("runoffSelect", async ({ ack, body, context }) => {
   await ack();
+  let gameid = body.actions[0].block_id;
   try {
     let response4 = await app.client.chat.update({
       token: context.botToken,
@@ -910,11 +927,12 @@ app.action("runoffSelect", async ({ ack, body, context }) => {
       ]
     });
     let accusedName = body.actions[0].selected_option.value;
-    let accuserStatus = await checkAccuserStatus(body.user.id);
+    let accuserStatus = await checkAccuserStatus(body.user.id,gameid);
     //get roundTable
     let roundTable = await queryOne({
       datatype: "runoff",
-      status: "in progress"
+      status: "in progress",
+      gameid:gameid
     });
     if (accuserStatus === "dead") {
       let response = await app.client.chat.postMessage({
@@ -931,9 +949,9 @@ app.action("runoffSelect", async ({ ack, body, context }) => {
     } else {
       let response = await app.client.chat.postMessage({
         token: context.botToken,
-        channel: await getGameChannel(),
+        channel: await getGameChannel(gameid),
         text:
-          (await playerNameFromId(body.user.id)) +
+          (await playerNameFromId(body.user.id,gameid)) +
           " has accused " +
           accusedName +
           " of being a Werewolf!",
@@ -943,7 +961,7 @@ app.action("runoffSelect", async ({ ack, body, context }) => {
             text: {
               type: "mrkdwn",
               text:
-                (await playerNameFromId(body.user.id)) +
+                (await playerNameFromId(body.user.id,gameid)) +
                 " has accused " +
                 accusedName +
                 " of being a Werewolf!"
@@ -954,14 +972,14 @@ app.action("runoffSelect", async ({ ack, body, context }) => {
       roundTable.accusations++;
       roundTable.accusationArray.push(accusedName);
       roundTable.accuserArray.push(body.user.id);
-      await updateRunoffTable(roundTable);
+      await updateRunoffTable(roundTable,gameid);
       console.log(roundTable);
       console.log(
-        (await countLivingVillagers()) + (await countLivingWerewolves())
+        (await countLivingVillagers(gameid)) + (await countLivingWerewolves(gameid))
       );
       if (
         roundTable.accusations ==
-        (await countLivingVillagers()) + (await countLivingWerewolves())
+        (await countLivingVillagers(gameid)) + (await countLivingWerewolves(gameid))
       ) {
         //move on to full live/die voting
         let response2 = await app.client.chat.update({
@@ -990,7 +1008,7 @@ app.action("runoffSelect", async ({ ack, body, context }) => {
         for (const property in votesObj) {
           let response = await app.client.chat.postMessage({
             token: context.botToken,
-            channel: await getGameChannel(),
+            channel: await getGameChannel(gameid),
             text: `${property}: ${votesObj[property]} votes`
           });
           if (votesObj[property] > finalAccusedVotes) {
@@ -1004,7 +1022,7 @@ app.action("runoffSelect", async ({ ack, body, context }) => {
         if (getMax(votesObj).length == 1) {
           let response3 = await app.client.chat.postMessage({
             token: context.botToken,
-            channel: await getGameChannel(),
+            channel: await getGameChannel(gameid),
             text: `${finalAccused} stands accused of being a werewolf. They may now make their last statement, and then the village will vote on whether they live or die.`,
             blocks: [
               {
@@ -1030,19 +1048,19 @@ app.action("runoffSelect", async ({ ack, body, context }) => {
               }
             ]
           });
-          await updateAccusedInRoundTable(finalAccused);
-          let livingVillagerArray = await getLivingVillagersPlusWerewolfId();
+          await updateAccusedInRoundTable(finalAccused,gameid);
+          let livingVillagerArray = await getLivingVillagersPlusWerewolfId(gameid);
           livingVillagerArray.forEach(player => {
-            distributeVotingButtons(player.player, finalAccused);
+            distributeVotingButtons(player.player, finalAccused,gameid);
           });
         } else {
           const response3 = await app.client.chat.postMessage({
             token: process.env.SLACK_BOT_TOKEN,
-            channel: await getGameChannel(),
+            channel: await getGameChannel(gameid),
             text:
               "The village cannot decide on someone to accuse, so they decide not to kill anyone today."
           });
-          startNightRound();
+          startNightRound(gameid);
         }
       }
     }
@@ -1054,6 +1072,7 @@ app.action("runoffSelect", async ({ ack, body, context }) => {
 //listen for voting button pushes: remove buttons, broadcast vote to channel, tally vote, check if final vote
 app.action("submitvote", async ({ ack, body, context }) => {
   await ack();
+  let gameid = body.actions[0].block_id;
   try {
     //remove buttons
     let response1 = await app.client.chat.update({
@@ -1071,17 +1090,15 @@ app.action("submitvote", async ({ ack, body, context }) => {
       ]
     });
     //broadcast vote to channel
-    if (body.actions[0].block_id === (await getGameChannel())) {
       let vote = body.actions[0].selected_option.value;
       const response = await app.client.chat.postMessage({
         token: context.botToken,
-        channel: await getGameChannel(),
-        text: (await playerNameFromId(body.user.id)) + " has voted " + vote
+        channel: await getGameChannel(gameid),
+        text: (await playerNameFromId(body.user.id, gameid)) + " has voted " + vote
       });
       //tally vote in roundtable using (status = "in progress"). check if it was the last vote of the round
-      tallyVote(vote);
+      tallyVote(vote,gameid);
       //end the round (check if person was the werewolf, end game if so, otherwise kill person and start next round)
-    }
   } catch (error) {
     console.error(error);
   }
@@ -1090,8 +1107,9 @@ app.action("submitvote", async ({ ack, body, context }) => {
 //FUNCTIONS BELOW HERE
 
 //build role selection modal
-function buildRoleSelectModal(score, villagers, werewolves, seers, bodyguards) {
+function buildRoleSelectModal(score, villagers, werewolves, seers, bodyguards, setupid) {
   const obj = require("./modals/role-setup-modal");
+  console.log(obj.blocks[6].elements[0].value);
   //set gamescore
   obj.blocks[1].text.text = "*Current Game Balance Score: " + score + "*";
   //set villager text
@@ -1114,18 +1132,26 @@ function buildRoleSelectModal(score, villagers, werewolves, seers, bodyguards) {
     "*Bodyguards : " +
     bodyguards +
     "*\nThese are special villagers who have the power to protect one other living player each night, preventing them from being eaten.\n_+3 Points Each (Maximum 1)_";
+  //set "value" of buttons to the setupid for querying purposes
+  console.log(setupid);
+  obj.blocks[6].elements[0].value = setupid;
+  obj.blocks[6].elements[1].value = setupid;
+  obj.blocks[9].elements[0].value = setupid;
+  obj.blocks[9].elements[1].value = setupid;
+  obj.blocks[12].elements[0].value = setupid;
+  obj.blocks[12].elements[1].value = setupid;
   return obj;
 }
 
 //end day round
-async function endDayRound(verdict) {
+async function endDayRound(verdict,gameid) {
   if (verdict === "live") {
     let response = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
-      channel: await getGameChannel(),
+      channel: await getGameChannel(gameid),
       text:
         "The village has spared " +
-        (await getAccusedFromRoundTable()) +
+        (await getAccusedFromRoundTable(gameid)) +
         "'s life! But the Werewolf lives to strike again...",
       blocks: [
         {
@@ -1137,7 +1163,7 @@ async function endDayRound(verdict) {
             type: "mrkdwn",
             text:
               "*Mercy has been shown!*\nThe village has spared " +
-              (await getAccusedFromRoundTable()) +
+              (await getAccusedFromRoundTable(gameid)) +
               "'s life! But the Werewolf lives to strike again..."
           },
           accessory: {
@@ -1151,14 +1177,14 @@ async function endDayRound(verdict) {
         }
       ]
     });
-    startNightRound();
+    startNightRound(gameid);
   } else {
     let response = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
-      channel: await getGameChannel(),
+      channel: await getGameChannel(gameid),
       text:
         "The village has chosen to kill " +
-        (await getAccusedFromRoundTable()) +
+        (await getAccusedFromRoundTable(gameid)) +
         "!",
       blocks: [
         {
@@ -1170,7 +1196,7 @@ async function endDayRound(verdict) {
             type: "mrkdwn",
             text:
               "*The verdict is in!*\nThe village has chosen to kill " +
-              (await getAccusedFromRoundTable()) +
+              (await getAccusedFromRoundTable(gameid)) +
               "!"
           },
           accessory: {
@@ -1184,49 +1210,49 @@ async function endDayRound(verdict) {
         }
       ]
     });
-    await villageKillAccused();
+    await villageKillAccused(gameid);
   }
 }
 
 //village kills the accused
-async function villageKillAccused() {
-  let accused = await getAccusedFromRoundTable();
-  let accusedRole = await getAccusedRole(accused);
-  let livingWerewolves = await query({role:"werewolf",status:"alive"});
+async function villageKillAccused(gameid) {
+  let accused = await getAccusedFromRoundTable(gameid);
+  let accusedRole = await getAccusedRole(accused,gameid);
+  let livingWerewolves = await query({ role: "werewolf", status: "alive",gameid:gameid});
   if (accusedRole === "werewolf" && livingWerewolves.length == 1) {
     let response3 = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
-      channel: await getGameChannel(),
+      channel: await getGameChannel(gameid),
       text: "They were indeed a werewolf!! Which means that..."
     });
-    endGame("village");
-  } else if (accusedRole === "werewolf"){
+    endGame("village",gameid);
+  } else if (accusedRole === "werewolf") {
     let response2 = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
-      channel: await getGameChannel(),
+      channel: await getGameChannel(gameid),
       text: "They were indeed a werewolf!! But they weren't the last one..."
     });
-    await killVillager(accused);
-    await startNightRound();
+    await killVillager(accused,gameid);
+    await startNightRound(gameid);
   } else {
     let response = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
-      channel: await getGameChannel(),
+      channel: await getGameChannel(gameid),
       text: "Sadly, they were an innocent villager..."
     });
-    await killVillager(accused);
-    await startNightRound();
+    await killVillager(accused,gameid);
+    await startNightRound(gameid);
   }
 }
 
 //tally vote
-async function tallyVote(vote) {
+async function tallyVote(vote,gameid) {
   //fetch currentRound table and update it
-  let currentRound = await getCurrentRound();
+  let currentRound = await getCurrentRound(gameid);
   currentRound.votedPlayers++;
   if (vote === "live") currentRound.livevotes++;
   else if (vote === "die") currentRound.dievotes++;
-  await updateRoundTable(currentRound);
+  await updateRoundTable(currentRound,gameid);
   //check if it was the last vote of the round, and if so run endDayRound function
   if (currentRound.votedPlayers == currentRound.livingPlayers) {
     let verdict;
@@ -1235,12 +1261,12 @@ async function tallyVote(vote) {
     } else {
       verdict = "die";
     }
-    await endDayRound(verdict);
+    await endDayRound(verdict,gameid);
   }
 }
 
 //distribute roles via DM
-async function distributeRolesViaDM(player, role, spec) {
+async function distributeRolesViaDM(player, role, spec, gameid) {
   let roleBlocks;
   if (role === "villager" && spec === "none") {
     roleBlocks = [
@@ -1268,7 +1294,7 @@ async function distributeRolesViaDM(player, role, spec) {
         elements: [
           {
             type: "mrkdwn",
-            text: "(Werewolf game <#" + (await getGameChannel()) + ">)"
+            text: "(Werewolf game <#" + (await getGameChannel(gameid)) + ">)"
           }
         ]
       }
@@ -1300,7 +1326,7 @@ async function distributeRolesViaDM(player, role, spec) {
         elements: [
           {
             type: "mrkdwn",
-            text: "(Werewolf game <#" + (await getGameChannel()) + ">)"
+            text: "(Werewolf game <#" + (await getGameChannel(gameid)) + ">)"
           }
         ]
       }
@@ -1332,7 +1358,7 @@ async function distributeRolesViaDM(player, role, spec) {
         elements: [
           {
             type: "mrkdwn",
-            text: "(Werewolf game <#" + (await getGameChannel()) + ">)"
+            text: "(Werewolf game <#" + (await getGameChannel(gameid)) + ">)"
           }
         ]
       }
@@ -1358,6 +1384,15 @@ async function distributeRolesViaDM(player, role, spec) {
       },
       {
         type: "divider"
+      },
+      {
+        type: "context",
+        elements: [
+          {
+            type: "mrkdwn",
+            text: "(Werewolf game <#" + (await getGameChannel(gameid)) + ">)"
+          }
+        ]
       }
     ];
   }
@@ -1371,7 +1406,7 @@ async function distributeRolesViaDM(player, role, spec) {
 }
 
 //distribute voting buttons via DM
-async function distributeVotingButtons(player, name) {
+async function distributeVotingButtons(player, name, gameid) {
   const response = await app.client.chat.postMessage({
     token: process.env.SLACK_BOT_TOKEN,
     channel: player,
@@ -1386,7 +1421,7 @@ async function distributeVotingButtons(player, name) {
       },
       {
         type: "actions",
-        block_id: await getGameChannel(),
+        block_id: gameid,
         elements: [
           {
             type: "static_select",
@@ -1422,7 +1457,7 @@ async function distributeVotingButtons(player, name) {
         elements: [
           {
             type: "mrkdwn",
-            text: "(Werewolf game <#" + (await getGameChannel()) + ">)"
+            text: "(Werewolf game <#" + (await getGameChannel(gameid)) + ">)"
           }
         ]
       }
@@ -1431,7 +1466,7 @@ async function distributeVotingButtons(player, name) {
 }
 
 //distribute accusation buttons via DM
-async function distributeAccusationButtons(player, killArray, actionid) {
+async function distributeAccusationButtons(player, killArray, actionid, gameid) {
   const response2 = await app.client.chat.postMessage({
     token: process.env.SLACK_BOT_TOKEN,
     channel: player,
@@ -1445,6 +1480,7 @@ async function distributeAccusationButtons(player, killArray, actionid) {
     blocks: [
       {
         type: "actions",
+        block_id: gameid,
         elements: [
           {
             type: "static_select",
@@ -1462,7 +1498,7 @@ async function distributeAccusationButtons(player, killArray, actionid) {
         elements: [
           {
             type: "mrkdwn",
-            text: "(Werewolf game <#" + (await getGameChannel()) + ">)"
+            text: "(Werewolf game <#" + (await getGameChannel(gameid)) + ">)"
           }
         ]
       }
@@ -1471,10 +1507,10 @@ async function distributeAccusationButtons(player, killArray, actionid) {
 }
 
 //start a new night round
-async function startNightRound() {
+async function startNightRound(gameid) {
   const response = await app.client.chat.postMessage({
     token: process.env.SLACK_BOT_TOKEN,
-    channel: await getGameChannel(),
+    channel: await getGameChannel(gameid),
     text:
       "*Night has fallen!*\n And while the village is asleep, the Werewolves are selecting their next victim...",
     blocks: [
@@ -1499,36 +1535,36 @@ async function startNightRound() {
       }
     ]
   });
-  let bodyguard = await queryOne({ spec: "bodyguard" });
+  let bodyguard = await queryOne({ spec: "bodyguard",gameid:gameid });
   console.log("BODYGUARD");
   console.log(bodyguard);
-  if (!bodyguard){
-    bodyguard = {status:"none"};
+  if (!bodyguard) {
+    bodyguard = { status: "none" };
   }
   console.log(bodyguard);
-  let seer = await queryOne({ spec: "seer" });
-  if (!seer){
-    seer = {status:"none"};
+  let seer = await queryOne({ spec: "seer",gameid:gameid });
+  if (!seer) {
+    seer = { status: "none" };
   }
   if (bodyguard.status === "alive") {
-    sendBodyguardSelector();
+    sendBodyguardSelector(gameid);
   } else if (seer.status === "alive") {
-    sendSeerSelector();
+    sendSeerSelector(gameid);
   } else {
-    sendKillSelector();
+    sendKillSelector(gameid);
   }
 }
 
 //distribute bodyguard button
-async function sendBodyguardSelector() {
-  let livingVillagerArray = await getLivingVillagersPlusWerewolf();
+async function sendBodyguardSelector(gameid) {
+  let livingVillagerArray = await getLivingVillagersPlusWerewolf(gameid);
   let killArray = [];
   livingVillagerArray.forEach(villager => {
     let newOption = killOption(villager.name);
     killArray.push(newOption);
   });
   setTimeout(async () => {
-    let userid = await queryOne({ spec: "bodyguard" });
+    let userid = await queryOne({ spec: "bodyguard",gameid:gameid });
     const response3 = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
       channel: userid.player,
@@ -1542,7 +1578,7 @@ async function sendBodyguardSelector() {
       blocks: [
         {
           type: "actions",
-          block_id: await getGameChannel(),
+          block_id: gameid,
           elements: [
             {
               type: "static_select",
@@ -1560,7 +1596,7 @@ async function sendBodyguardSelector() {
           elements: [
             {
               type: "mrkdwn",
-              text: "(Werewolf game <#" + (await getGameChannel()) + ">)"
+              text: "(Werewolf game <#" + (await getGameChannel(gameid)) + ">)"
             }
           ]
         }
@@ -1570,15 +1606,15 @@ async function sendBodyguardSelector() {
 }
 
 //distribute seer button
-async function sendSeerSelector() {
-  let livingVillagerArray = await getLivingVillagersPlusWerewolf();
+async function sendSeerSelector(gameid) {
+  let livingVillagerArray = await getLivingVillagersPlusWerewolf(gameid);
   let killArray = [];
   livingVillagerArray.forEach(villager => {
     let newOption = killOption(villager.name);
     killArray.push(newOption);
   });
   setTimeout(async () => {
-    let userid = await queryOne({ spec: "seer" });
+    let userid = await queryOne({ spec: "seer",gameid:gameid });
     const response3 = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
       channel: userid.player,
@@ -1592,7 +1628,7 @@ async function sendSeerSelector() {
       blocks: [
         {
           type: "actions",
-          block_id: await getGameChannel(),
+          block_id: gameid,
           elements: [
             {
               type: "static_select",
@@ -1610,7 +1646,7 @@ async function sendSeerSelector() {
           elements: [
             {
               type: "mrkdwn",
-              text: "(Werewolf game <#" + (await getGameChannel()) + ">)"
+              text: "(Werewolf game <#" + (await getGameChannel(gameid)) + ">)"
             }
           ]
         }
@@ -1620,8 +1656,8 @@ async function sendSeerSelector() {
 }
 
 //distribute kill button
-async function sendKillSelector() {
-  let livingVillagerArray = await getLivingVillagers();
+async function sendKillSelector(gameid) {
+  let livingVillagerArray = await getLivingVillagers(gameid);
   let killArray = [];
   livingVillagerArray.forEach(villager => {
     let newOption = killOption(villager.name);
@@ -1630,17 +1666,17 @@ async function sendKillSelector() {
   setTimeout(async () => {
     const response4 = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
-      channel: await updateWerewolfChannel(),
+      channel: await updateWerewolfChannel(gameid),
       text: "It's time to dine! Use the selector below to eat someone:"
     });
     const response2 = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
-      channel: await updateWerewolfChannel(),
+      channel: await updateWerewolfChannel(gameid),
       text: "Choose someone to eat tonight",
       blocks: [
         {
           type: "actions",
-          block_id: await getGameChannel(),
+          block_id: gameid,
           elements: [
             {
               type: "static_select",
@@ -1658,7 +1694,7 @@ async function sendKillSelector() {
           elements: [
             {
               type: "mrkdwn",
-              text: "(Werewolf game <#" + (await getGameChannel()) + ">)"
+              text: "(Werewolf game <#" + (await getGameChannel(gameid)) + ">)"
             }
           ]
         }
@@ -1668,12 +1704,12 @@ async function sendKillSelector() {
 }
 
 //start a new Day Round
-async function startDayRound(deadPerson) {
+async function startDayRound(deadPerson, gameid) {
   //function to advance the round
-  advanceRound();
+  advanceRound(gameid);
   //get living villagers for the message
-  let livingVillagerArray = await getLivingVillagersPlusWerewolf();
-  let livingVillagerIDs = await getLivingVillagersPlusWerewolfId();
+  let livingVillagerArray = await getLivingVillagersPlusWerewolf(gameid);
+  let livingVillagerIDs = await getLivingVillagersPlusWerewolfId(gameid);
   let killArray = [];
   livingVillagerArray.forEach(villager => {
     let newOption = killOption(villager.name);
@@ -1684,7 +1720,7 @@ async function startDayRound(deadPerson) {
     let newId = villager.player;
     villagerArray.push(newId);
   });
-  //let everyone know who died, and present accusation selector
+  //let everyone know who died
   let deadMessage = "testvalue";
   if (deadPerson) {
     deadMessage =
@@ -1697,7 +1733,7 @@ async function startDayRound(deadPerson) {
   }
   const response = await app.client.chat.postMessage({
     token: process.env.SLACK_BOT_TOKEN,
-    channel: await getGameChannel(),
+    channel: await getGameChannel(gameid),
     text: deadMessage,
     blocks: [
       {
@@ -1722,15 +1758,15 @@ async function startDayRound(deadPerson) {
   });
   //compare how many werewolves and villagers are still alive
   //and end the game if Werewolves equal or outnumber villagers
-  let livingWerewolves = await countLivingWerewolves();
-  let livingVillagers = await countLivingVillagers();
+  let livingWerewolves = await countLivingWerewolves(gameid);
+  let livingVillagers = await countLivingVillagers(gameid);
   if (livingWerewolves >= livingVillagers) {
-    endGame("werewolves");
+    endGame("werewolves", gameid);
   } else {
     console.log("villagerArray:");
     console.log(villagerArray);
     villagerArray.forEach(player => {
-      distributeAccusationButtons(player, killArray, "accusationSelect");
+      distributeAccusationButtons(player, killArray, "accusationSelect",gameid);
     });
   }
 }
@@ -1760,9 +1796,9 @@ async function getWerewolfBotId() {
 }
 
 //game channel database lookup
-function getGameChannel() {
+function getGameChannel(gameid) {
   return new Promise((resolve, reject) => {
-    db.findOne({ datatype: "game" }, { channel: 1, _id: 0 }, (err, docs) => {
+    db.findOne({ datatype: "game",gameid:gameid }, { channel: 1, _id: 0 }, (err, docs) => {
       if (err) console.log("There's a problem with the database ", err);
       else if (docs) console.log("getGameChannel query completed");
       resolve(docs.channel);
@@ -1771,10 +1807,10 @@ function getGameChannel() {
 }
 
 //get Accused role database lookup
-function getAccusedRole(accused) {
+function getAccusedRole(accused,gameid) {
   return new Promise((resolve, reject) => {
     db.findOne(
-      { datatype: "player", name: accused },
+      { datatype: "player", name: accused,gameid:gameid},
       { role: 1, _id: 0 },
       (err, docs) => {
         if (err) console.log("There's a problem with the database ", err);
@@ -1786,10 +1822,10 @@ function getAccusedRole(accused) {
 }
 
 //accused roundTable database lookup
-function getAccusedFromRoundTable() {
+function getAccusedFromRoundTable(gameid) {
   return new Promise((resolve, reject) => {
     db.findOne(
-      { datatype: "round", status: "in progress" },
+      { datatype: "round", status: "in progress",gameid:gameid },
       { accused: 1, _id: 0 },
       (err, docs) => {
         if (err) console.log("There's a problem with the database ", err);
@@ -1812,8 +1848,8 @@ function getAccusedFromRoundTable() {
 }*/
 
 //werewolf database lookup returns names
-async function getWerewolfNames() {
-  let werewolves = await query({role:"werewolf"});
+async function getWerewolfNames(gameid) {
+  let werewolves = await query({ role: "werewolf",gameid:gameid });
   let werewolfNameArray = [];
   werewolves.forEach(wolf => {
     werewolfNameArray.push(wolf.name);
@@ -1822,10 +1858,10 @@ async function getWerewolfNames() {
 }
 
 //living villagers lookup returns names
-function getLivingVillagers() {
+function getLivingVillagers(gameid) {
   return new Promise((resolve, reject) => {
     db.find(
-      { role: "villager", status: "alive" },
+      { role: "villager", status: "alive",gameid:gameid },
       { name: 1, _id: 0 },
       (err, docs) => {
         if (err) console.log("There's a problem with the database ", err);
@@ -1837,9 +1873,9 @@ function getLivingVillagers() {
 }
 
 //living villagers plus werewolf lookup return names
-function getLivingVillagersPlusWerewolf() {
+function getLivingVillagersPlusWerewolf(gameid) {
   return new Promise((resolve, reject) => {
-    db.find({ status: "alive" }, { name: 1, _id: 0 }, (err, docs) => {
+    db.find({ status: "alive",gameid:gameid }, { name: 1, _id: 0 }, (err, docs) => {
       if (err) console.log("There's a problem with the database ", err);
       else if (docs)
         console.log("getLivingVillagersPlusWerewolf query completed");
@@ -1856,10 +1892,10 @@ const getMax = object => {
 };
 
 //living villagers plus werewolf lookup return user ids
-function getLivingVillagersPlusWerewolfId() {
+function getLivingVillagersPlusWerewolfId(gameid) {
   return new Promise((resolve, reject) => {
     db.find(
-      { status: "alive" },
+      { status: "alive",gameid:gameid },
       { player: 1, name: 1, role: 1, _id: 0 },
       (err, docs) => {
         if (err) console.log("There's a problem with the database ", err);
@@ -1872,9 +1908,9 @@ function getLivingVillagersPlusWerewolfId() {
 }
 
 //query current round
-function getCurrentRound() {
+function getCurrentRound(gameid) {
   return new Promise((resolve, reject) => {
-    db.findOne({ datatype: "round", status: "in progress" }, (err, docs) => {
+    db.findOne({ datatype: "round", status: "in progress",gameid:gameid }, (err, docs) => {
       if (err) console.log("There's a problem with the database ", err);
       else if (docs) console.log("getCurrentRound query completed");
       resolve(docs);
@@ -1883,9 +1919,9 @@ function getCurrentRound() {
 }
 
 //kill villager
-function killVillager(name) {
+function killVillager(name,gameid) {
   db.update(
-    { name: name },
+    { name: name,gameid:gameid },
     { $set: { status: "dead" } },
     { returnUpdatedDocs: true },
     (err, numReplaced, affectedDocuments) => {
@@ -1895,9 +1931,9 @@ function killVillager(name) {
   );
 }
 
-function protectVillager(name, round) {
+function protectVillager(name, round, gameid) {
   db.update(
-    { datatype: "round", round: round },
+    { datatype: "round", round: round, gameid: gameid},
     { $set: { protected: name } },
     { returnUpdatedDocs: true },
     (err, numReplaced, affectedDocuments) => {
@@ -1908,9 +1944,9 @@ function protectVillager(name, round) {
 }
 
 //update accused in roundTable
-function updateAccusedInRoundTable(name) {
+function updateAccusedInRoundTable(name,gameid) {
   db.update(
-    { datatype: "round", status: "in progress" },
+    { datatype: "round", status: "in progress",gameid:gameid },
     { $set: { accused: name } },
     (err, numReplaced) => {
       if (err) console.log("There's a problem with the database: ", err);
@@ -1920,9 +1956,9 @@ function updateAccusedInRoundTable(name) {
 }
 
 //update roundTable
-function updateRoundTable(data) {
+function updateRoundTable(data,gameid) {
   db.update(
-    { datatype: "round", status: "in progress" },
+    { datatype: "round", status: "in progress",gameid:gameid },
     data,
     (err, numReplaced) => {
       if (err) console.log("There's a problem with the database: ", err);
@@ -1932,9 +1968,9 @@ function updateRoundTable(data) {
 }
 
 //update runoffTable
-function updateRunoffTable(data) {
+function updateRunoffTable(data,gameid) {
   db.update(
-    { datatype: "runoff", status: "in progress" },
+    { datatype: "runoff", status: "in progress",gameid:gameid},
     data,
     (err, numReplaced) => {
       if (err) console.log("There's a problem with the database: ", err);
@@ -1952,9 +1988,9 @@ function printDatabase() {
 }
 
 //count Living Villagers left
-function countLivingVillagers() {
+function countLivingVillagers(gameid) {
   return new Promise((resolve, reject) => {
-    db.count({ role: "villager", status: "alive" }, (err, count) => {
+    db.count({ role: "villager", status: "alive",gameid:gameid}, (err, count) => {
       if (err) console.log("There's a problem with the database: ", err);
       else if (count) console.log("living villagers :" + count);
       resolve(count);
@@ -1963,9 +1999,9 @@ function countLivingVillagers() {
 }
 
 //count Living Werewolves left
-function countLivingWerewolves() {
+function countLivingWerewolves(gameid) {
   return new Promise((resolve, reject) => {
-    db.count({ role: "werewolf", status: "alive" }, (err, count) => {
+    db.count({ role: "werewolf", status: "alive",gameid:gameid }, (err, count) => {
       if (err) console.log("There's a problem with the database: ", err);
       else if (count) console.log("living werewolves :" + count);
       resolve(count);
@@ -1974,9 +2010,9 @@ function countLivingWerewolves() {
 }
 
 //check if Accuser is alive
-function checkAccuserStatus(accuser) {
+function checkAccuserStatus(accuser, gameid) {
   return new Promise((resolve, reject) => {
-    db.findOne({ player: accuser }, { status: 1, _id: 0 }, (err, docs) => {
+    db.findOne({ player: accuser,gameid:gameid }, { status: 1, _id: 0 }, (err, docs) => {
       if (err) console.log("There's a problem with the database: ", err);
       else if (docs) console.log("accuser life check queried");
       resolve(docs.status);
@@ -1985,9 +2021,9 @@ function checkAccuserStatus(accuser) {
 }
 
 //look up player name from user id
-function playerNameFromId(id) {
+function playerNameFromId(id,gameid) {
   return new Promise((resolve, reject) => {
-    db.findOne({ player: id }, { name: 1, _id: 0 }, (err, docs) => {
+    db.findOne({ player: id,gameid:gameid}, { name: 1, _id: 0 }, (err, docs) => {
       if (err) console.log("There's a problem with the database: ", err);
       else if (docs) console.log("player name queried from id");
       resolve(docs.name);
@@ -2018,9 +2054,9 @@ function query(query) {
 }
 
 //advance round
-async function advanceRound() {
+async function advanceRound(gameid) {
   await db.findOne(
-    { datatype: "game" },
+    { datatype: "game" , gameid:gameid},
     { round: 1, _id: 0 },
     async (err, docs) => {
       if (err) console.log("There's a problem with the database: ", err);
@@ -2028,7 +2064,7 @@ async function advanceRound() {
       let currentRound = docs.round;
       //update current round status to complete
       await db.update(
-        { datatype: "round", round: currentRound },
+        { datatype: "round", round: currentRound, gameid:gameid},
         { $set: { status: "completed" } },
         { multi: false },
         (err, numReplaced) => {
@@ -2039,7 +2075,7 @@ async function advanceRound() {
       );
       // advance round in game record
       await db.update(
-        { datatype: "game" },
+        { datatype: "game",gameid:gameid },
         { $set: { round: currentRound + 1 } },
         { multi: false },
         (err, numReplaced) => {
@@ -2049,11 +2085,13 @@ async function advanceRound() {
         }
       );
       // create new round record
+      let setupTable = await queryOne({datatype:"setup",gameid:gameid});
       let roundTable = {
         datatype: "round",
+        gameid: gameid,
         round: currentRound + 1,
         livingPlayers:
-          (await countLivingVillagers()) + (await countLivingWerewolves()),
+          (await countLivingVillagers(gameid)) + (await countLivingWerewolves(gameid)),
         votedPlayers: 0,
         accused: "",
         livevotes: 0,
@@ -2071,7 +2109,7 @@ async function advanceRound() {
       });
       // close out runoff record
       await db.update(
-        { datatype: "runoff", status: "in progress" },
+        { datatype: "runoff", status: "in progress",gameid:gameid },
         { $set: { status: "complete" } },
         (err, numReplaced) => {
           if (err) console.log("There's a problem with the database: ", err);
@@ -2095,13 +2133,14 @@ function killOption(name) {
 }
 
 //end game
-async function endGame(winner) {
+async function endGame(winner,gameid) {
   if (winner === "village") {
     let response = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
-      channel: await getGameChannel(),
+      channel: await getGameChannel(gameid),
       text:
-        "*The Village Wins!*\nThe werewolves have been vanquished, and the (surviving) villagers rejoice in their victory. The werewolves were:\n"+await getWerewolfNames(),
+        "*The Village Wins!*\nThe werewolves have been vanquished, and the (surviving) villagers rejoice in their victory. The werewolves were:\n" +
+        (await getWerewolfNames(gameid)),
       blocks: [
         {
           type: "divider"
@@ -2111,7 +2150,8 @@ async function endGame(winner) {
           text: {
             type: "mrkdwn",
             text:
-              "*The Village Wins!*\nThe werewolves have been vanquished, and the (surviving) villagers rejoice in their victory. The werewolves were:\n"+await getWerewolfNames()
+              "*The Village Wins!*\nThe werewolves have been vanquished, and the (surviving) villagers rejoice in their victory. The werewolves were:\n" +
+              (await getWerewolfNames(gameid))
           },
           accessory: {
             type: "image",
@@ -2127,9 +2167,10 @@ async function endGame(winner) {
   } else {
     let response = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
-      channel: await getGameChannel(),
+      channel: await getGameChannel(gameid),
       text:
-        "*The Werewolves Win!*\nThese were the Werewolves, and they have succeeded in eating all of the Villagers:\n"+await getWerewolfNames(),
+        "*The Werewolves Win!*\nThese were the Werewolves, and they have succeeded in eating all of the Villagers:\n" +
+        (await getWerewolfNames(gameid)),
       blocks: [
         {
           type: "divider"
@@ -2139,7 +2180,8 @@ async function endGame(winner) {
           text: {
             type: "mrkdwn",
             text:
-              "*The Werewolves Win!*\nThese were the Werewolves, and they have succeeded in eating all of the Villagers:\n"+await getWerewolfNames()
+              "*The Werewolves Win!*\nThese were the Werewolves, and they have succeeded in eating all of the Villagers:\n" +
+              (await getWerewolfNames(gameid))
           },
           accessory: {
             type: "image",
@@ -2153,44 +2195,65 @@ async function endGame(winner) {
       ]
     });
   }
+  db.remove({gameid:gameid}, { multi: true }, function(err) {
+    if (err) console.log("There's a problem with the database: ", err);
+    else console.log("database cleared for game "+gameid);
+  });
 }
 
 //update werewolf channel
-async function updateWerewolfChannel() {
-  let werewolves = await query({role:"werewolf",status:"alive"});
+async function updateWerewolfChannel(gameid) {
+  let werewolves = await query({ role: "werewolf", status: "alive",gameid:gameid });
   let werewolfArray = [];
   werewolves.forEach(wolf => {
     werewolfArray.push(wolf.player);
   });
   const response = await app.client.conversations.open({
-    token:process.env.SLACK_BOT_TOKEN,
-    return_im:false,
+    token: process.env.SLACK_BOT_TOKEN,
+    return_im: false,
     users: werewolfArray.join()
   });
   console.log(response.channel.id);
-  let gameTable = await queryOne({datatype:"game"});
+  let gameTable = await queryOne({ datatype: "game",gameid:gameid });
   gameTable.werewolfChannel = response;
-  await db.update({datatype:"game"},gameTable);
+  await db.update({ datatype: "game",gameid:gameid }, gameTable);
   return response.channel.id;
 }
+
+//    clear the database
+function clearDatabase(){
+    db.remove({}, { multi: true }, function(err) {
+      if (err) console.log("There's a problem with the database: ", err);
+      else console.log("database cleared");
+    });
+};
 
 //boilerplate to start the app
 (async () => {
   await app.start(process.env.PORT || 3000);
-  //villageKillAccused();
   //printDatabase();
+  //clearDatabase();
   console.log("⚡️ Bolt app is running!");
 })();
 
 /* TO DO LIST
 
+in progress:
+separating database to make it multi-channel functional.
+should be working now, but need to test all scenarios due to Glitch API Incident
+
 bugs:
 make sure nothing can get double-sent due to timeouts (e.g. starting the day round) (maybe resolved using plus?)
 
 ops:
+build a bot to do my deploys?
 
-v2:
-segment database to work with multiple channels
+enhancements:
+add OAuth to install on multiple workspaces
+add more roles
+move to Lambda?
+publish publicly?
+non-stock photos?
 
 refactor/cleanup:
 abstract database queries further
