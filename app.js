@@ -132,7 +132,6 @@ app.view("selectrolesbutton", async ({ ack, body, view, context }) => {
 
 app.action("addwerewolf", async ({ ack, body, context }) => {
   await ack();
-  console.log(body);
   try {
     //query setupTable
     let setupTable = await queryOne({ datatype: "setup", setupid: body.actions[0].value});
@@ -801,7 +800,7 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
         for (const property in votesObj) {
           let response = await app.client.chat.postMessage({
             token: context.botToken,
-            channel: await getGameChannel(),
+            channel: await getGameChannel(gameid),
             text: `${property}: ${votesObj[property]} votes`
           });
           if (votesObj[property] > finalAccusedVotes) {
@@ -1009,7 +1008,7 @@ app.action("runoffSelect", async ({ ack, body, context }) => {
         for (const property in votesObj) {
           let response = await app.client.chat.postMessage({
             token: context.botToken,
-            channel: await getGameChannel(),
+            channel: await getGameChannel(gameid),
             text: `${property}: ${votesObj[property]} votes`
           });
           if (votesObj[property] > finalAccusedVotes) {
@@ -1091,7 +1090,6 @@ app.action("submitvote", async ({ ack, body, context }) => {
       ]
     });
     //broadcast vote to channel
-    if (body.actions[0].block_id === (await getGameChannel(gameid))) {
       let vote = body.actions[0].selected_option.value;
       const response = await app.client.chat.postMessage({
         token: context.botToken,
@@ -1101,7 +1099,6 @@ app.action("submitvote", async ({ ack, body, context }) => {
       //tally vote in roundtable using (status = "in progress"). check if it was the last vote of the round
       tallyVote(vote,gameid);
       //end the round (check if person was the werewolf, end game if so, otherwise kill person and start next round)
-    }
   } catch (error) {
     console.error(error);
   }
@@ -1764,7 +1761,7 @@ async function startDayRound(deadPerson, gameid) {
   let livingWerewolves = await countLivingWerewolves(gameid);
   let livingVillagers = await countLivingVillagers(gameid);
   if (livingWerewolves >= livingVillagers) {
-    endGame("werewolves");
+    endGame("werewolves", gameid);
   } else {
     console.log("villagerArray:");
     console.log(villagerArray);
@@ -2243,9 +2240,7 @@ function clearDatabase(){
 
 in progress:
 separating database to make it multi-channel functional.
-succeeded in using "value" in the action to segregate the queries for the setuptable.
-now need to propagate this unique setupid throughout the gameid in all tables and use it to selectively clear database at end
-currently working on the accusationselect action (need to get gameid from block_id in body)
+should be working now, but need to test all scenarios due to Glitch API Incident
 
 bugs:
 make sure nothing can get double-sent due to timeouts (e.g. starting the day round) (maybe resolved using plus?)
