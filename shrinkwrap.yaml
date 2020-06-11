@@ -1,14 +1,15 @@
 dependencies:
-  '@slack/bolt': 2.0.1
+  '@slack/bolt': 2.1.1
   nedb: 1.8.0
 packages:
-  /@slack/bolt/2.0.1:
+  /@slack/bolt/2.1.1:
     dependencies:
       '@slack/logger': 2.0.0
+      '@slack/oauth': 1.1.0
       '@slack/types': 1.6.0
-      '@slack/web-api': 5.8.1
+      '@slack/web-api': 5.9.0
       '@types/express': 4.17.6
-      '@types/node': 14.0.4
+      '@types/node': 14.0.11
       '@types/promise.allsettled': 1.0.3
       axios: 0.19.2
       express: 4.17.1
@@ -21,16 +22,29 @@ packages:
       node: '>=10.13.0'
       npm: '>=6.4.1'
     resolution:
-      integrity: sha512-EOhsVTcgw/VGloblGBUMyt+ll1lTA2o0ZO9u5BKM00X+C6HHmg7S1ZAco61KFmvTZELuWInWEX1ye4fDGarfXg==
+      integrity: sha512-6Bpv1jiQx9XcbeYfGhldJghA2EzxnforvQ8nlDLLg276oLh2qIEJ2mx2GemOTjTv0bQsX1J9cFp480D8jhlk5g==
   /@slack/logger/2.0.0:
     dependencies:
-      '@types/node': 14.0.4
+      '@types/node': 14.0.11
     dev: false
     engines:
       node: '>= 8.9.0'
       npm: '>= 5.5.1'
     resolution:
       integrity: sha512-OkIJpiU2fz6HOJujhlhfIGrc8hB4ibqtf7nnbJQDerG0BqwZCfmgtK5sWzZ0TkXVRBKD5MpLrTmCYyMxoMCgPw==
+  /@slack/oauth/1.1.0:
+    dependencies:
+      '@slack/logger': 2.0.0
+      '@slack/web-api': 5.9.0
+      '@types/jsonwebtoken': 8.5.0
+      '@types/node': 14.0.11
+      jsonwebtoken: 8.5.1
+      lodash.isstring: 4.0.1
+    dev: false
+    engines:
+      node: '>=10.0.0'
+    resolution:
+      integrity: sha512-v4yawvn9DCmWO0HXXnWxjmwVikLkoZKjCU042o6UES5u0FroYX8ozs+xWbueO8lb7YYqSKPsIX6A6nlbR4pUyA==
   /@slack/types/1.6.0:
     dev: false
     engines:
@@ -38,12 +52,12 @@ packages:
       npm: '>= 5.5.1'
     resolution:
       integrity: sha512-SrrAD/ZxDN4szQ35V/mY2TvKSyGsUWP8def1C8NMg9AvdYG0VyaL5f+Dd6jw8STosMFXd3zqjekMowT9LB9/IQ==
-  /@slack/web-api/5.8.1:
+  /@slack/web-api/5.9.0:
     dependencies:
       '@slack/logger': 2.0.0
       '@slack/types': 1.6.0
       '@types/is-stream': 1.1.0
-      '@types/node': 14.0.4
+      '@types/node': 14.0.11
       '@types/p-queue': 2.3.2
       axios: 0.19.2
       eventemitter3: 3.1.2
@@ -56,23 +70,23 @@ packages:
       node: '>= 8.9.0'
       npm: '>= 5.5.1'
     resolution:
-      integrity: sha512-MONzkjWOXV39Dejo8B9WSl/F0dxcVh9wyeW6R0jf6T6BhwN4f24iErYtTh19g+MRhb0oiyeKfnFsJTSKQulfDA==
+      integrity: sha512-gIRvuA9wGtp4S/Zc+zfT59IaGHYzNxjob2QxoJlc3JZ3BLuPMa6Lw81YBV0xutJvUVFPX2ytW27KAUakvi5ZMA==
   /@types/body-parser/1.19.0:
     dependencies:
       '@types/connect': 3.4.33
-      '@types/node': 14.0.4
+      '@types/node': 14.0.11
     dev: false
     resolution:
       integrity: sha512-W98JrE0j2K78swW4ukqMleo8R7h/pFETjM2DQ90MF6XK2i4LO4W3gQ71Lt4w3bfm2EvVSyWHplECvB5sK22yFQ==
   /@types/connect/3.4.33:
     dependencies:
-      '@types/node': 14.0.4
+      '@types/node': 14.0.11
     dev: false
     resolution:
       integrity: sha512-2+FrkXY4zllzTNfJth7jOqEHC+enpLeGslEhpnTAkg21GkRrWV4SsAtqchtT4YS9/nODBU2/ZfsBY2X4J/dX7A==
   /@types/express-serve-static-core/4.17.7:
     dependencies:
-      '@types/node': 14.0.4
+      '@types/node': 14.0.11
       '@types/qs': 6.9.3
       '@types/range-parser': 1.2.3
     dev: false
@@ -89,18 +103,24 @@ packages:
       integrity: sha512-n/mr9tZI83kd4azlPG5y997C/M4DNABK9yErhFM6hKdym4kkmd9j0vtsJyjFIwfRBxtrxZtAfGZCNRIBMFLK5w==
   /@types/is-stream/1.1.0:
     dependencies:
-      '@types/node': 14.0.4
+      '@types/node': 14.0.11
     dev: false
     resolution:
       integrity: sha512-jkZatu4QVbR60mpIzjINmtS1ZF4a/FqdTUTBeQDVOQ2PYyidtwFKr0B5G6ERukKwliq+7mIXvxyppwzG5EgRYg==
+  /@types/jsonwebtoken/8.5.0:
+    dependencies:
+      '@types/node': 14.0.11
+    dev: false
+    resolution:
+      integrity: sha512-9bVao7LvyorRGZCw0VmH/dr7Og+NdjYSsKAxB43OQoComFbBgsEpoR9JW6+qSq/ogwVBg8GI2MfAlk4SYI4OLg==
   /@types/mime/2.0.2:
     dev: false
     resolution:
       integrity: sha512-4kPlzbljFcsttWEq6aBW0OZe6BDajAmyvr2xknBG92tejQnvdGtT9+kXSZ580DqpxY9qG2xeQVF9Dq0ymUTo5Q==
-  /@types/node/14.0.4:
+  /@types/node/14.0.11:
     dev: false
     resolution:
-      integrity: sha512-k3NqigXWRzQZVBDS5D1U70A5E8Qk4Kh+Ha/x4M8Bt9pF0X05eggfnC9+63Usc9Q928hRUIpIhTQaXsZwZBl4Ew==
+      integrity: sha512-lCvvI24L21ZVeIiyIUHZ5Oflv1hhHQ5E1S25IRlKIXaRkVgmXpJMI3wUJkmym2bTbCe+WoIibQnMVAU3FguaOg==
   /@types/p-queue/2.3.2:
     dev: false
     resolution:
@@ -189,6 +209,10 @@ packages:
       node: '>= 0.8'
     resolution:
       integrity: sha512-dhEPs72UPbDnAQJ9ZKMNTP6ptJaionhP5cBb541nXPlW60Jepo9RV/a4fX4XWW9CuFNK22krhrj1+rgzifNCsw==
+  /buffer-equal-constant-time/1.0.1:
+    dev: false
+    resolution:
+      integrity: sha1-+OcRMvf/5uAaXJaXpMbz5I1cyBk=
   /bytes/3.1.0:
     dev: false
     engines:
@@ -263,6 +287,12 @@ packages:
     dev: false
     resolution:
       integrity: sha1-l4hXRCxEdJ5CBmE+N5RiBYJqvYA=
+  /ecdsa-sig-formatter/1.0.11:
+    dependencies:
+      safe-buffer: 5.2.1
+    dev: false
+    resolution:
+      integrity: sha512-nagl3RYrbNv6kQkeJIpt6NJZy8twLB/2vtz6yN9Z4vRKHN4/QZJIEbqohALSgwKdnksuY3k5Addp5lg8sVoVcQ==
   /ee-first/1.1.1:
     dev: false
     resolution:
@@ -279,8 +309,8 @@ packages:
       function-bind: 1.1.1
       has: 1.0.3
       has-symbols: 1.0.1
-      is-callable: 1.1.5
-      is-regex: 1.0.5
+      is-callable: 1.2.0
+      is-regex: 1.1.0
       object-inspect: 1.7.0
       object-keys: 1.1.1
       object.assign: 4.1.0
@@ -309,7 +339,7 @@ packages:
       integrity: sha512-UfrmHuWQlNMTs35e1ypnvikg6jCz3SK8v8ImvmDsh36fCVUR1MqoFDiyn0/k52C8NqO3YsO8Oe0azeesNuqSsQ==
   /es-to-primitive/1.2.1:
     dependencies:
-      is-callable: 1.1.5
+      is-callable: 1.2.0
       is-date-object: 1.0.2
       is-symbol: 1.0.3
     dev: false
@@ -486,12 +516,12 @@ packages:
       node: '>= 0.4'
     resolution:
       integrity: sha512-xPh0Rmt8NE65sNzvyUmWgI1tz3mKq74lGA0mL8LYZcoIzKOzDh6HmrYm3d18k60nHerC8A9Km8kYu87zfSFnLA==
-  /is-callable/1.1.5:
+  /is-callable/1.2.0:
     dev: false
     engines:
       node: '>= 0.4'
     resolution:
-      integrity: sha512-ESKv5sMCJB2jnHTWZ3O5itG+O128Hsus4K4Qh1h2/cgn2vbgnLSVqfV46AeJA9D5EeeLa9w81KUXMtn34zhX+Q==
+      integrity: sha512-pyVD9AaGLxtg6srb2Ng6ynWJqkHU9bEM087AKck0w8QwDarTfNcpIYoU8x8Hv2Icm8u6kFJM18Dag8lyqGkviw==
   /is-date-object/1.0.2:
     dev: false
     engines:
@@ -502,14 +532,14 @@ packages:
     dev: false
     resolution:
       integrity: sha512-T/S49scO8plUiAOA2DBTBG3JHpn1yiw0kRp6dgiZ0v2/6twi5eiB0rHtHFH9ZIrvlWc6+4O+m4zg5+Z833aXgw==
-  /is-regex/1.0.5:
+  /is-regex/1.1.0:
     dependencies:
-      has: 1.0.3
+      has-symbols: 1.0.1
     dev: false
     engines:
       node: '>= 0.4'
     resolution:
-      integrity: sha512-vlKW17SNq44owv5AQR3Cq0bQPEb8+kF3UKZ2fiZNOWtztYE5i0CzCZxFDwO58qAOWtxdBRVO/V5Qin1wjCqFYQ==
+      integrity: sha512-iI97M8KTWID2la5uYXlkbSDQIg4F6o1sYboZKKTDpnDQMLtUL86zxhgDet3Q2SriaYsyGqZ6Mn2SjbRKeLHdqw==
   /is-set/2.0.1:
     dev: false
     resolution:
@@ -549,6 +579,39 @@ packages:
     dev: false
     resolution:
       integrity: sha512-A6fMAio4D2ot2r/TYzr4yUWrmwNdsN5xL7+HUiyACE4DXm+q8HtPcnFTp+NnW3k4N05tZ7FVYFFb2CR13NxyHQ==
+  /jsonwebtoken/8.5.1:
+    dependencies:
+      jws: 3.2.2
+      lodash.includes: 4.3.0
+      lodash.isboolean: 3.0.3
+      lodash.isinteger: 4.0.4
+      lodash.isnumber: 3.0.3
+      lodash.isplainobject: 4.0.6
+      lodash.isstring: 4.0.1
+      lodash.once: 4.1.1
+      ms: 2.1.2
+      semver: 5.7.1
+    dev: false
+    engines:
+      node: '>=4'
+      npm: '>=1.4.28'
+    resolution:
+      integrity: sha512-XjwVfRS6jTMsqYs0EsuJ4LGxXV14zQybNd4L2r0UvbVnSF9Af8x7p5MzbJ90Ioz/9TI41/hTCvznF/loiSzn8w==
+  /jwa/1.4.1:
+    dependencies:
+      buffer-equal-constant-time: 1.0.1
+      ecdsa-sig-formatter: 1.0.11
+      safe-buffer: 5.2.1
+    dev: false
+    resolution:
+      integrity: sha512-qiLX/xhEEFKUAJ6FiBMbes3w9ATzyk5W7Hvzpa/SLYdxNtng+gcurvrI7TbACjIXlsJyr05/S1oUhZrc63evQA==
+  /jws/3.2.2:
+    dependencies:
+      jwa: 1.4.1
+      safe-buffer: 5.2.1
+    dev: false
+    resolution:
+      integrity: sha512-YHlZCB6lMTllWDtSPHz/ZXTsi8S00usEV6v1tjq8tOUZzw7DpSDWVXjXDre6ed1w/pd495ODpHZYSdkRTsa0HA==
   /lie/3.1.1:
     dependencies:
       immediate: 3.0.6
@@ -561,6 +624,34 @@ packages:
     dev: false
     resolution:
       integrity: sha512-1TulyYfc4udS7ECSBT2vwJksWbkwwTX8BzeUIiq8Y07Riy7bDAAnxDaPU/tWyOVmQAcWJIEIFP9lPfBGqVoPgQ==
+  /lodash.includes/4.3.0:
+    dev: false
+    resolution:
+      integrity: sha1-YLuYqHy5I8aMoeUTJUgzFISfVT8=
+  /lodash.isboolean/3.0.3:
+    dev: false
+    resolution:
+      integrity: sha1-bC4XHbKiV82WgC/UOwGyDV9YcPY=
+  /lodash.isinteger/4.0.4:
+    dev: false
+    resolution:
+      integrity: sha1-YZwK89A/iwTDH1iChAt3sRzWg0M=
+  /lodash.isnumber/3.0.3:
+    dev: false
+    resolution:
+      integrity: sha1-POdoEMWSjQM1IwGsKHMX8RwLH/w=
+  /lodash.isplainobject/4.0.6:
+    dev: false
+    resolution:
+      integrity: sha1-fFJqUtibRcRcxpC4gWO+BJf1UMs=
+  /lodash.isstring/4.0.1:
+    dev: false
+    resolution:
+      integrity: sha1-1SfftUVuynzJu5XV2ur4i6VKVFE=
+  /lodash.once/4.1.1:
+    dev: false
+    resolution:
+      integrity: sha1-DdOXEhPHxW34gJd9UEyI+0cal6w=
   /media-typer/0.3.0:
     dev: false
     engines:
@@ -617,6 +708,10 @@ packages:
     dev: false
     resolution:
       integrity: sha512-tgp+dl5cGk28utYktBsrFqA7HKgrhgPsg6Z/EfhWI4gl1Hwq8B/GmY/0oXZ6nF8hDVesS/FpnYaD/kOWhYQvyg==
+  /ms/2.1.2:
+    dev: false
+    resolution:
+      integrity: sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==
   /nedb/1.8.0:
     dependencies:
       async: 0.2.10
@@ -758,6 +853,10 @@ packages:
     dev: false
     resolution:
       integrity: sha512-Gd2UZBJDkXlY7GbJxfsE8/nvKkUEU1G38c1siN6QP6a9PT9MmHB8GnpscSmMJSoF8LOIrt8ud/wPtojys4G6+g==
+  /safe-buffer/5.2.1:
+    dev: false
+    resolution:
+      integrity: sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==
   /safer-buffer/2.1.2:
     dev: false
     resolution:
@@ -766,6 +865,11 @@ packages:
     dev: false
     resolution:
       integrity: sha1-De4hahyUGrN+nvsXiPavxf9VN/w=
+  /semver/5.7.1:
+    dev: false
+    hasBin: true
+    resolution:
+      integrity: sha512-sauaDf/PZdVgrLTNYHRtpXa1iRiKcaebiKQ1BJdpQlWH2lCvexQdX55snPFyK7QzpudqbCI0qXFfOasHdyNDGQ==
   /send/0.17.1:
     dependencies:
       debug: 2.6.9
@@ -888,5 +992,5 @@ registry: 'https://registry.npmjs.org/'
 shrinkwrapMinorVersion: 9
 shrinkwrapVersion: 3
 specifiers:
-  '@slack/bolt': ^2.0.1
+  '@slack/bolt': ^2.1.1
   nedb: '*'

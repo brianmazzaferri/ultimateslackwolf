@@ -1,5 +1,5 @@
 {
-  "name": "bolt-app-template",
+  "name": "ultimate-slackwolf",
   "version": "0.0.1",
   "description": "An attempt to code a basic Werewolf game using Bolt & Slack",
   "main": "app.js",
@@ -7,19 +7,20 @@
     "start": "node app.js"
   },
   "dependencies": {
-    "@slack/bolt": "^2.0.1",
+    "@slack/bolt": "^2.1.1",
     "nedb": "*"
   },
   "engines": {
     "node": "11.x"
   },
   "repository": {
-    "url": "https://glitch.com/edit/#!/bolt-app-template"
+    "url": "https://github.com/brianmazzaferri/ultimateslackwolf"
   },
   "license": "MIT",
   "keywords": [
     "node",
     "glitch",
-    "express"
+    "express",
+    "werewolf"
   ]
 }

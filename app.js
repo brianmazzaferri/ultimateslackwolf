@@ -1,15 +1,40 @@
 // Require the Bolt package (github.com/slackapi/bolt)
-const { App } = require("@slack/bolt");
+const { App } = require('@slack/bolt');
+//const Auth = require('bolt-oauth');
 const Datastore = require("nedb"), //(require in the database)
   // Security note: the database is saved to the file `datafile` on the local filesystem. It's deliberately placed in the `.data` directory
   // which doesn't get copied if someone remixes the project.
   db = new Datastore({ filename: ".data/datafile", autoload: true }); //initialize the database
 
-//boilerplate to start the app
 const app = new App({
-  token: process.env.SLACK_BOT_TOKEN,
-  signingSecret: process.env.SLACK_SIGNING_SECRET
+  signingSecret: process.env.SLACK_SIGNING_SECRET,
+  clientId: process.env.SLACK_CLIENT_ID,
+  clientSecret: process.env.SLACK_CLIENT_SECRET,
+  stateSecret: 'my-state-secret',
+  scopes: ['app_mentions:read', 'channels:join', 'channels:manage', 'channels:read', 'chat:write', 'chat:write.customize', 'commands', 'groups:read', 'im:history', 'im:read', 'im:write', 'mpim:read', 'mpim:write', 'reactions:read', 'users.profile:read', 'users:read'],
+  installationStore: {
+    storeInstallation: (installation) => {
+      // change the line below so it saves to your database
+      console.log("INSTALLATION:");
+      console.log(installation);
+      return db.insert(installation, (err, newDoc) => {
+        if (err) console.log("There's a problem with the database ", err);
+        else if (newDoc) console.log("installation insert completed");
+      });
+    },
+    fetchInstallation: async (InstallQuery) => {
+      // change the line below so it fetches from your database
+      console.log("FETCH:");
+      console.log(InstallQuery);
+      let incomingteam = InstallQuery.teamId;
+      let result = await queryOne({"team.id":InstallQuery.teamId});
+      console.log(result);
+      return result;
+    },
+  },
 });
+
+
 
 //LISTENERS GO HERE
 
@@ -2228,19 +2253,24 @@ function clearDatabase(){
     });
 };
 
+
+
+
+
 //boilerplate to start the app
 (async () => {
   await app.start(process.env.PORT || 3000);
   //printDatabase();
   //clearDatabase();
+  //const result = await queryOne({"team.id":"TRMT64EQJ"});
+  //console.log(result.team.id);
   console.log("⚡️ Bolt app is running!");
 })();
 
 /* TO DO LIST
 
 in progress:
-separating database to make it multi-channel functional.
-should be working now, but need to test all scenarios due to Glitch API Incident
+revise code to remove all references to static env variables for new OAuth setup
 
 bugs:
 make sure nothing can get double-sent due to timeouts (e.g. starting the day round) (maybe resolved using plus?)
@@ -2249,7 +2279,6 @@ ops:
 build a bot to do my deploys?
 
 enhancements:
-add OAuth to install on multiple workspaces
 add more roles
 move to Lambda?
 publish publicly?
