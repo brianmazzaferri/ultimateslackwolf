@@ -27,3 +27,9 @@ Ultimate Slackwolf
                             ;`-
                            :\
                            ;  
+
+```
+Instructions
+------------
+- Use the shortcut to start a new game, and have fun!
+- Written by Brian Mazzaferri
