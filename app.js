@@ -1,15 +1,40 @@
 // Require the Bolt package (github.com/slackapi/bolt)
-const { App } = require("@slack/bolt");
+const { App } = require('@slack/bolt');
+//const Auth = require('bolt-oauth');
 const Datastore = require("nedb"), //(require in the database)
   // Security note: the database is saved to the file `datafile` on the local filesystem. It's deliberately placed in the `.data` directory
   // which doesn't get copied if someone remixes the project.
   db = new Datastore({ filename: ".data/datafile", autoload: true }); //initialize the database
 
-//boilerplate to start the app
 const app = new App({
-  token: process.env.SLACK_BOT_TOKEN,
-  signingSecret: process.env.SLACK_SIGNING_SECRET
+  signingSecret: process.env.SLACK_SIGNING_SECRET,
+  clientId: process.env.SLACK_CLIENT_ID,
+  clientSecret: process.env.SLACK_CLIENT_SECRET,
+  stateSecret: 'my-state-secret',
+  scopes: ['app_mentions:read', 'channels:join', 'channels:manage', 'channels:read', 'chat:write', 'chat:write.customize', 'commands', 'groups:read', 'im:history', 'im:read', 'im:write', 'mpim:read', 'mpim:write', 'reactions:read', 'users.profile:read', 'users:read'],
+  installationStore: {
+    storeInstallation: (installation) => {
+      // change the line below so it saves to your database
+//      console.log("INSTALLATION:");
+//      console.log(installation);
+      return db.insert(installation, (err, newDoc) => {
+        if (err) console.log("There's a problem with the database ", err);
+        else if (newDoc) console.log("installation insert completed");
+      });
+    },
+    fetchInstallation: async (InstallQuery) => {
+      // change the line below so it fetches from your database
+//      console.log("FETCH:");
+//      console.log(InstallQuery);
+      let incomingteam = InstallQuery.teamId;
+      let result = await queryOne({"team.id":InstallQuery.teamId});
+      console.log(result);
+      return result;
+    },
+  },
 });
+
+
 
 //LISTENERS GO HERE
 
@@ -448,7 +473,7 @@ app.view("startgame", async ({ ack, body, view, context }) => {
     let playerArray = [];
     await players.forEach(async player => {
       const response3 = await app.client.users.profile.get({
-        token: process.env.SLACK_BOT_TOKEN,
+        token: context.botToken,
         user: player
       });
       await playerArray.push({
@@ -582,11 +607,11 @@ app.view("startgame", async ({ ack, body, view, context }) => {
       setTimeout(async () => {
         let playerArray = await query({ datatype: "player", gameid: setupTable.setupid });
         playerArray.forEach(async player => {
-          await distributeRolesViaDM(player.player, player.role, player.spec, setupTable.setupid);
+          await distributeRolesViaDM(player.player, player.role, player.spec, setupTable.setupid,context.botToken);
         });
-      }, 500);
-      startNightRound(setupTable.setupid);
-    }, 500);
+      }, 1000);
+      startNightRound(setupTable.setupid,context.botToken);
+    }, 1000);
   } catch (error) {
     console.error(error);
   }
@@ -623,7 +648,7 @@ app.action("killSelect", async ({ ack, body, context }) => {
           }
         ]
       });
-      startDayRound(eatenPerson, gameid);
+      startDayRound(eatenPerson, gameid, context.botToken);
   } catch (error) {
     console.error(error);
   }
@@ -657,9 +682,9 @@ app.action("bodyguardSelect", async ({ ack, body, context }) => {
         seer = { status: "none" };
       }
       if (seer.status === "alive") {
-        sendSeerSelector(gameid);
+        sendSeerSelector(gameid, context.botToken);
       } else {
-        sendKillSelector(gameid);
+        sendKillSelector(gameid, context.botToken);
       }
   } catch (error) {
     console.error(error);
@@ -687,7 +712,7 @@ app.action("seerSelect", async ({ ack, body, context }) => {
         ]
       });
       console.log("investigation completed");
-      sendKillSelector(gameid);
+      sendKillSelector(gameid, context.botToken);
   } catch (error) {
     console.error(error);
   }
@@ -815,7 +840,7 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
           let response3 = await app.client.chat.postMessage({
             token: context.botToken,
             channel: await getGameChannel(gameid),
-            text: `${finalAccused} stands accused of being a werewolf. They should now offer their last statement, and the village will vote on whether they live or die.`,
+            text: `${finalAccused} stands accused of being a werewolf. They may now make their last statement, and the village will vote on whether they live or die.`,
             blocks: [
               {
                 type: "divider"
@@ -827,7 +852,7 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
                   text:
                     "*It's time to pass judgment!*\n" +
                     finalAccused +
-                    " stands accused of being a werewolf. They should now offer their last statement, and the village will vote on whether they live or die."
+                    " stands accused of being a werewolf. They may now make their last statement, and the village will vote on whether they live or die."
                 },
                 accessory: {
                   type: "image",
@@ -843,7 +868,7 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
           await updateAccusedInRoundTable(finalAccused,gameid);
           let livingVillagerArray = await getLivingVillagersPlusWerewolfId(gameid);
           livingVillagerArray.forEach(player => {
-            distributeVotingButtons(player.player, finalAccused,gameid);
+            distributeVotingButtons(player.player, finalAccused,gameid,context.botToken);
           });
         } else {
           let killArray = [];
@@ -852,7 +877,7 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
             killArray.push(newOption);
           });
           const response3 = await app.client.chat.postMessage({
-            token: process.env.SLACK_BOT_TOKEN,
+            token: context.botToken,
             channel: await getGameChannel(gameid),
             text:
               "*The vote is tied!*\nThere will now be a runoff round of accusations. If there is another tie, the village does not kill anyone today and the next night round will begin.",
@@ -884,7 +909,8 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
               player.player,
               killArray,
               "runoffSelect",
-              gameid
+              gameid,
+              context.botToken
             );
           });
           console.log(roundTable);
@@ -910,8 +936,8 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
 //listen for a runoff accusation, check to make sure the person isn't dead, and start the voting
 app.action("runoffSelect", async ({ ack, body, context }) => {
   await ack();
-  let gameid = body.actions[0].block_id;
   try {
+    let gameid = body.actions[0].block_id;
     let response4 = await app.client.chat.update({
       token: context.botToken,
       ts: body.message.ts,
@@ -1023,7 +1049,7 @@ app.action("runoffSelect", async ({ ack, body, context }) => {
           let response3 = await app.client.chat.postMessage({
             token: context.botToken,
             channel: await getGameChannel(gameid),
-            text: `${finalAccused} stands accused of being a werewolf. They may now make their last statement, and then the village will vote on whether they live or die.`,
+            text: `${finalAccused} stands accused of being a werewolf. They may now make their last statement, and the village will vote on whether they live or die.`,
             blocks: [
               {
                 type: "divider"
@@ -1035,7 +1061,7 @@ app.action("runoffSelect", async ({ ack, body, context }) => {
                   text:
                     "*It's time to pass judgment!*\n" +
                     finalAccused +
-                    " stands accused of being a werewolf. They may now make their last statement, and then the village will vote on whether they live or die."
+                    " stands accused of being a werewolf. They may now make their last statement, and the village will vote on whether they live or die."
                 },
                 accessory: {
                   type: "image",
@@ -1051,16 +1077,16 @@ app.action("runoffSelect", async ({ ack, body, context }) => {
           await updateAccusedInRoundTable(finalAccused,gameid);
           let livingVillagerArray = await getLivingVillagersPlusWerewolfId(gameid);
           livingVillagerArray.forEach(player => {
-            distributeVotingButtons(player.player, finalAccused,gameid);
+            distributeVotingButtons(player.player, finalAccused,gameid,context.botToken);
           });
         } else {
           const response3 = await app.client.chat.postMessage({
-            token: process.env.SLACK_BOT_TOKEN,
+            token: context.botToken,
             channel: await getGameChannel(gameid),
             text:
               "The village cannot decide on someone to accuse, so they decide not to kill anyone today."
           });
-          startNightRound(gameid);
+          startNightRound(gameid, context.botToken);
         }
       }
     }
@@ -1097,7 +1123,7 @@ app.action("submitvote", async ({ ack, body, context }) => {
         text: (await playerNameFromId(body.user.id, gameid)) + " has voted " + vote
       });
       //tally vote in roundtable using (status = "in progress"). check if it was the last vote of the round
-      tallyVote(vote,gameid);
+      tallyVote(vote,gameid,context.botToken);
       //end the round (check if person was the werewolf, end game if so, otherwise kill person and start next round)
   } catch (error) {
     console.error(error);
@@ -1144,10 +1170,10 @@ function buildRoleSelectModal(score, villagers, werewolves, seers, bodyguards, s
 }
 
 //end day round
-async function endDayRound(verdict,gameid) {
+async function endDayRound(verdict,gameid,token) {
   if (verdict === "live") {
     let response = await app.client.chat.postMessage({
-      token: process.env.SLACK_BOT_TOKEN,
+      token: token,
       channel: await getGameChannel(gameid),
       text:
         "The village has spared " +
@@ -1177,10 +1203,10 @@ async function endDayRound(verdict,gameid) {
         }
       ]
     });
-    startNightRound(gameid);
+    startNightRound(gameid,token);
   } else {
     let response = await app.client.chat.postMessage({
-      token: process.env.SLACK_BOT_TOKEN,
+      token: token,
       channel: await getGameChannel(gameid),
       text:
         "The village has chosen to kill " +
@@ -1210,43 +1236,43 @@ async function endDayRound(verdict,gameid) {
         }
       ]
     });
-    await villageKillAccused(gameid);
+    await villageKillAccused(gameid,token);
   }
 }
 
 //village kills the accused
-async function villageKillAccused(gameid) {
+async function villageKillAccused(gameid, token) {
   let accused = await getAccusedFromRoundTable(gameid);
   let accusedRole = await getAccusedRole(accused,gameid);
   let livingWerewolves = await query({ role: "werewolf", status: "alive",gameid:gameid});
   if (accusedRole === "werewolf" && livingWerewolves.length == 1) {
     let response3 = await app.client.chat.postMessage({
-      token: process.env.SLACK_BOT_TOKEN,
+      token: token,
       channel: await getGameChannel(gameid),
       text: "They were indeed a werewolf!! Which means that..."
     });
-    endGame("village",gameid);
+    endGame("village",gameid, token);
   } else if (accusedRole === "werewolf") {
     let response2 = await app.client.chat.postMessage({
-      token: process.env.SLACK_BOT_TOKEN,
+      token: token,
       channel: await getGameChannel(gameid),
       text: "They were indeed a werewolf!! But they weren't the last one..."
     });
     await killVillager(accused,gameid);
-    await startNightRound(gameid);
+    await startNightRound(gameid, token);
   } else {
     let response = await app.client.chat.postMessage({
-      token: process.env.SLACK_BOT_TOKEN,
+      token: token,
       channel: await getGameChannel(gameid),
       text: "Sadly, they were an innocent villager..."
     });
     await killVillager(accused,gameid);
-    await startNightRound(gameid);
+    await startNightRound(gameid, token);
   }
 }
 
 //tally vote
-async function tallyVote(vote,gameid) {
+async function tallyVote(vote,gameid,token) {
   //fetch currentRound table and update it
   let currentRound = await getCurrentRound(gameid);
   currentRound.votedPlayers++;
@@ -1261,12 +1287,12 @@ async function tallyVote(vote,gameid) {
     } else {
       verdict = "die";
     }
-    await endDayRound(verdict,gameid);
+    await endDayRound(verdict,gameid,token);
   }
 }
 
 //distribute roles via DM
-async function distributeRolesViaDM(player, role, spec, gameid) {
+async function distributeRolesViaDM(player, role, spec, gameid,token) {
   let roleBlocks;
   if (role === "villager" && spec === "none") {
     roleBlocks = [
@@ -1398,7 +1424,7 @@ async function distributeRolesViaDM(player, role, spec, gameid) {
   }
 
   const response = await app.client.chat.postMessage({
-    token: process.env.SLACK_BOT_TOKEN,
+    token: token,
     channel: player,
     text: "Your role has been assigned",
     blocks: roleBlocks
@@ -1406,9 +1432,9 @@ async function distributeRolesViaDM(player, role, spec, gameid) {
 }
 
 //distribute voting buttons via DM
-async function distributeVotingButtons(player, name, gameid) {
+async function distributeVotingButtons(player, name, gameid, token) {
   const response = await app.client.chat.postMessage({
-    token: process.env.SLACK_BOT_TOKEN,
+    token: token,
     channel: player,
     text: "Time to vote! Should " + name + "live or die?",
     blocks: [
@@ -1466,15 +1492,15 @@ async function distributeVotingButtons(player, name, gameid) {
 }
 
 //distribute accusation buttons via DM
-async function distributeAccusationButtons(player, killArray, actionid, gameid) {
+async function distributeAccusationButtons(player, killArray, actionid, gameid, token) {
   const response2 = await app.client.chat.postMessage({
-    token: process.env.SLACK_BOT_TOKEN,
+    token: token,
     channel: player,
     text:
       "Time to figure out who the werewolf is! Once you are ready to accuse someone, use the selector below"
   });
   const response = await app.client.chat.postMessage({
-    token: process.env.SLACK_BOT_TOKEN,
+    token: token,
     channel: player,
     text: "When ready, accuse someone of being the werewolf",
     blocks: [
@@ -1507,9 +1533,9 @@ async function distributeAccusationButtons(player, killArray, actionid, gameid) 
 }
 
 //start a new night round
-async function startNightRound(gameid) {
+async function startNightRound(gameid, token) {
   const response = await app.client.chat.postMessage({
-    token: process.env.SLACK_BOT_TOKEN,
+    token: token,
     channel: await getGameChannel(gameid),
     text:
       "*Night has fallen!*\n And while the village is asleep, the Werewolves are selecting their next victim...",
@@ -1547,16 +1573,16 @@ async function startNightRound(gameid) {
     seer = { status: "none" };
   }
   if (bodyguard.status === "alive") {
-    sendBodyguardSelector(gameid);
+    sendBodyguardSelector(gameid,token);
   } else if (seer.status === "alive") {
-    sendSeerSelector(gameid);
+    sendSeerSelector(gameid, token);
   } else {
-    sendKillSelector(gameid);
+    sendKillSelector(gameid, token);
   }
 }
 
 //distribute bodyguard button
-async function sendBodyguardSelector(gameid) {
+async function sendBodyguardSelector(gameid, token) {
   let livingVillagerArray = await getLivingVillagersPlusWerewolf(gameid);
   let killArray = [];
   livingVillagerArray.forEach(villager => {
@@ -1566,13 +1592,13 @@ async function sendBodyguardSelector(gameid) {
   setTimeout(async () => {
     let userid = await queryOne({ spec: "bodyguard",gameid:gameid });
     const response3 = await app.client.chat.postMessage({
-      token: process.env.SLACK_BOT_TOKEN,
+      token: token,
       channel: userid.player,
       text:
         "It's time to use your power! Use the selector below to protect someone:"
     });
     const response2 = await app.client.chat.postMessage({
-      token: process.env.SLACK_BOT_TOKEN,
+      token: token,
       channel: userid.player,
       text: "Choose someone to protect tonight",
       blocks: [
@@ -1606,7 +1632,7 @@ async function sendBodyguardSelector(gameid) {
 }
 
 //distribute seer button
-async function sendSeerSelector(gameid) {
+async function sendSeerSelector(gameid, token) {
   let livingVillagerArray = await getLivingVillagersPlusWerewolf(gameid);
   let killArray = [];
   livingVillagerArray.forEach(villager => {
@@ -1616,13 +1642,13 @@ async function sendSeerSelector(gameid) {
   setTimeout(async () => {
     let userid = await queryOne({ spec: "seer",gameid:gameid });
     const response3 = await app.client.chat.postMessage({
-      token: process.env.SLACK_BOT_TOKEN,
+      token: token,
       channel: userid.player,
       text:
         "It's time to use your power! Use the selector below to investigate someone:"
     });
     const response2 = await app.client.chat.postMessage({
-      token: process.env.SLACK_BOT_TOKEN,
+      token: token,
       channel: userid.player,
       text: "Choose someone to examine",
       blocks: [
@@ -1656,7 +1682,7 @@ async function sendSeerSelector(gameid) {
 }
 
 //distribute kill button
-async function sendKillSelector(gameid) {
+async function sendKillSelector(gameid, token) {
   let livingVillagerArray = await getLivingVillagers(gameid);
   let killArray = [];
   livingVillagerArray.forEach(villager => {
@@ -1665,13 +1691,13 @@ async function sendKillSelector(gameid) {
   });
   setTimeout(async () => {
     const response4 = await app.client.chat.postMessage({
-      token: process.env.SLACK_BOT_TOKEN,
-      channel: await updateWerewolfChannel(gameid),
+      token: token,
+      channel: await updateWerewolfChannel(gameid,token),
       text: "It's time to dine! Use the selector below to eat someone:"
     });
     const response2 = await app.client.chat.postMessage({
-      token: process.env.SLACK_BOT_TOKEN,
-      channel: await updateWerewolfChannel(gameid),
+      token: token,
+      channel: await updateWerewolfChannel(gameid,token),
       text: "Choose someone to eat tonight",
       blocks: [
         {
@@ -1704,7 +1730,7 @@ async function sendKillSelector(gameid) {
 }
 
 //start a new Day Round
-async function startDayRound(deadPerson, gameid) {
+async function startDayRound(deadPerson, gameid,token) {
   //function to advance the round
   advanceRound(gameid);
   //get living villagers for the message
@@ -1732,7 +1758,7 @@ async function startDayRound(deadPerson, gameid) {
       "*Day has dawned!*\n And as if by some miracle, no one has died in the night. But it's still up to the villagers to find the Werewolf before it's too late...";
   }
   const response = await app.client.chat.postMessage({
-    token: process.env.SLACK_BOT_TOKEN,
+    token: token,
     channel: await getGameChannel(gameid),
     text: deadMessage,
     blocks: [
@@ -1761,38 +1787,14 @@ async function startDayRound(deadPerson, gameid) {
   let livingWerewolves = await countLivingWerewolves(gameid);
   let livingVillagers = await countLivingVillagers(gameid);
   if (livingWerewolves >= livingVillagers) {
-    endGame("werewolves", gameid);
+    endGame("werewolves", gameid, token);
   } else {
     console.log("villagerArray:");
     console.log(villagerArray);
     villagerArray.forEach(player => {
-      distributeAccusationButtons(player, killArray, "accusationSelect",gameid);
+      distributeAccusationButtons(player, killArray, "accusationSelect",gameid,token);
     });
   }
-}
-
-//append player names
-async function lookupPlayerName(userid) {
-  const response = await app.client.users.profile.get({
-    token: process.env.SLACK_BOT_TOKEN,
-    user: userid
-  });
-  return response.profile.real_name;
-}
-
-//find werewolf bot id
-async function getWerewolfBotId() {
-  const response = await app.client.users.list({
-    token: process.env.SLACK_BOT_TOKEN,
-    limit: 1000
-  });
-  let werewolfId;
-  response.members.forEach(member => {
-    if (member.real_name === "Slackwolf Moderator") {
-      werewolfId = member.id;
-    }
-  });
-  return werewolfId;
 }
 
 //game channel database lookup
@@ -2133,10 +2135,10 @@ function killOption(name) {
 }
 
 //end game
-async function endGame(winner,gameid) {
+async function endGame(winner,gameid, token) {
   if (winner === "village") {
     let response = await app.client.chat.postMessage({
-      token: process.env.SLACK_BOT_TOKEN,
+      token: token,
       channel: await getGameChannel(gameid),
       text:
         "*The Village Wins!*\nThe werewolves have been vanquished, and the (surviving) villagers rejoice in their victory. The werewolves were:\n" +
@@ -2166,7 +2168,7 @@ async function endGame(winner,gameid) {
     });
   } else {
     let response = await app.client.chat.postMessage({
-      token: process.env.SLACK_BOT_TOKEN,
+      token: token,
       channel: await getGameChannel(gameid),
       text:
         "*The Werewolves Win!*\nThese were the Werewolves, and they have succeeded in eating all of the Villagers:\n" +
@@ -2201,15 +2203,15 @@ async function endGame(winner,gameid) {
   });
 }
 
-//update werewolf channel
-async function updateWerewolfChannel(gameid) {
+//get channel to send werewolf kill selector to
+async function updateWerewolfChannel(gameid, token) {
   let werewolves = await query({ role: "werewolf", status: "alive",gameid:gameid });
   let werewolfArray = [];
   werewolves.forEach(wolf => {
     werewolfArray.push(wolf.player);
   });
   const response = await app.client.conversations.open({
-    token: process.env.SLACK_BOT_TOKEN,
+    token: token,
     return_im: false,
     users: werewolfArray.join()
   });
@@ -2220,7 +2222,7 @@ async function updateWerewolfChannel(gameid) {
   return response.channel.id;
 }
 
-//    clear the database
+//  fully clear the database
 function clearDatabase(){
     db.remove({}, { multi: true }, function(err) {
       if (err) console.log("There's a problem with the database: ", err);
@@ -2228,37 +2230,32 @@ function clearDatabase(){
     });
 };
 
+
+
+
+
 //boilerplate to start the app
 (async () => {
   await app.start(process.env.PORT || 3000);
   //printDatabase();
-  //clearDatabase();
   console.log("⚡️ Bolt app is running!");
 })();
 
 /* TO DO LIST
 
 in progress:
-separating database to make it multi-channel functional.
-should be working now, but need to test all scenarios due to Glitch API Incident
 
 bugs:
-make sure nothing can get double-sent due to timeouts (e.g. starting the day round) (maybe resolved using plus?)
 
 ops:
 build a bot to do my deploys?
 
 enhancements:
-add OAuth to install on multiple workspaces
 add more roles
 move to Lambda?
 publish publicly?
 non-stock photos?
 
 refactor/cleanup:
-abstract database queries further
-reduce redundancies between accusationSelect and runoffSelect
-make sure the round table actually writes to the correct round
-abstract big / reused blocks (runoff stuff?) into JSON files
 
 */
