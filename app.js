@@ -70,7 +70,12 @@ app.shortcut(
               block_id: "channelblock",
               element: {
                 type: "plain_text_input",
-                action_id: "channelname"
+                action_id: "channelname",
+                  placeholder: {
+                  type: "plain_text",
+                  text: "No spaces, Capitals, or Special Characters",
+                  emoji: true
+                }
               },
               label: {
                 type: "plain_text",
@@ -86,7 +91,7 @@ app.shortcut(
                 action_id: "userstoadd",
                 placeholder: {
                   type: "plain_text",
-                  text: "Select users",
+                  text: "Select users (include yourself!)",
                   emoji: true
                 }
               },
