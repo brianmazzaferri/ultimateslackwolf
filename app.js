@@ -15,8 +15,6 @@ const app = new App({
   installationStore: {
     storeInstallation: (installation) => {
       // change the line below so it saves to your database
-//      console.log("INSTALLATION:");
-//      console.log(installation);
       return db.insert(installation, (err, newDoc) => {
         if (err) console.log("There's a problem with the database ", err);
         else if (newDoc) console.log("installation insert completed");
@@ -24,8 +22,6 @@ const app = new App({
     },
     fetchInstallation: async (InstallQuery) => {
       // change the line below so it fetches from your database
-//      console.log("FETCH:");
-//      console.log(InstallQuery);
       let incomingteam = InstallQuery.teamId;
       let result = await queryOne({"team.id":InstallQuery.teamId});
       console.log(result);
