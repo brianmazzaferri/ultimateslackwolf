@@ -15,8 +15,6 @@ const app = new App({
   installationStore: {
     storeInstallation: (installation) => {
       // change the line below so it saves to your database
-//      console.log("INSTALLATION:");
-//      console.log(installation);
       return db.insert(installation, (err, newDoc) => {
         if (err) console.log("There's a problem with the database ", err);
         else if (newDoc) console.log("installation insert completed");
@@ -24,8 +22,6 @@ const app = new App({
     },
     fetchInstallation: async (InstallQuery) => {
       // change the line below so it fetches from your database
-//      console.log("FETCH:");
-//      console.log(InstallQuery);
       let incomingteam = InstallQuery.teamId;
       let result = await queryOne({"team.id":InstallQuery.teamId});
       console.log(result);
@@ -74,7 +70,12 @@ app.shortcut(
               block_id: "channelblock",
               element: {
                 type: "plain_text_input",
-                action_id: "channelname"
+                action_id: "channelname",
+                  placeholder: {
+                  type: "plain_text",
+                  text: "No spaces, Capitals, or Special Characters",
+                  emoji: true
+                }
               },
               label: {
                 type: "plain_text",
@@ -90,7 +91,7 @@ app.shortcut(
                 action_id: "userstoadd",
                 placeholder: {
                   type: "plain_text",
-                  text: "Select users",
+                  text: "Select users (include yourself!)",
                   emoji: true
                 }
               },
