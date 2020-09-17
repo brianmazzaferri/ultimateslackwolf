@@ -725,10 +725,8 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
   await ack();
   try {
     //get roundTable
-    let roundTable = {};
     let gameid = body.actions[0].block_id;
-    console.log(gameid);
-    do {
+/*    do {
       await setTimeout(async ()=> {
           let roundTable = await queryOne({
             datatype: "round",
@@ -740,6 +738,12 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
     } while (roundTable.lockstatus != 'open');
     roundTable.lockstatus = 'locked'; 
     await updateRoundTable(roundTable,gameid);
+*/
+    let roundTable = await queryOne({
+      datatype: "round",
+      status: "in progress",
+      gameid:gameid
+    });
     roundTable.accusations++;
     roundTable.accusationArray.push(accusedName);
     roundTable.accuserArray.push(body.user.id);
