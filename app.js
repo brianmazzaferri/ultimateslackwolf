@@ -747,7 +747,7 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
     await roundTable.accusations++;
     await roundTable.accusationArray.push(accusedName);
     await roundTable.accuserArray.push(body.user.id);
-    await roundTable.lockstatus='open';
+//  await roundTable.lockstatus='open';
     await updateRoundTable(roundTable,gameid);
     let response4 = await app.client.chat.update({
       token: context.botToken,
