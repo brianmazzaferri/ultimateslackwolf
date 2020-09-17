@@ -727,7 +727,9 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
     //get roundTable
     let gameid = body.actions[0].block_id;
     let accusedName = body.actions[0].selected_option.value;
-/*    do {
+/*    
+    Attempted database lock stuff - not working
+    do {
       await setTimeout(async ()=> {
           let roundTable = await queryOne({
             datatype: "round",
@@ -939,6 +941,17 @@ app.action("runoffSelect", async ({ ack, body, context }) => {
   await ack();
   try {
     let gameid = body.actions[0].block_id;
+    let accusedName = body.actions[0].selected_option.value;
+    //get roundTable
+    let roundTable = await queryOne({
+      datatype: "runoff",
+      status: "in progress",
+      gameid:gameid
+    });
+    await roundTable.accusations++;
+    await roundTable.accusationArray.push(accusedName);
+    await roundTable.accuserArray.push(body.user.id);
+    await updateRunoffTable(roundTable,gameid);
     let response4 = await app.client.chat.update({
       token: context.botToken,
       ts: body.message.ts,
@@ -953,142 +966,116 @@ app.action("runoffSelect", async ({ ack, body, context }) => {
         }
       ]
     });
-    let accusedName = body.actions[0].selected_option.value;
-    let accuserStatus = await checkAccuserStatus(body.user.id,gameid);
-    //get roundTable
-    let roundTable = await queryOne({
-      datatype: "runoff",
-      status: "in progress",
-      gameid:gameid
+    let response = await app.client.chat.postMessage({
+      token: context.botToken,
+      channel: await getGameChannel(gameid),
+      text:
+        (await playerNameFromId(body.user.id,gameid)) +
+        " has accused " +
+        accusedName +
+        " of being a Werewolf!",
+      blocks: [
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text:
+              (await playerNameFromId(body.user.id,gameid)) +
+              " has accused " +
+              accusedName +
+              " of being a Werewolf!"
+          }
+        }
+      ]
     });
-    if (accuserStatus === "dead") {
-      let response = await app.client.chat.postMessage({
+    console.log(roundTable);
+    console.log(
+      (await countLivingVillagers(gameid)) + (await countLivingWerewolves(gameid))
+    );
+    if (
+      roundTable.accusations ==
+      (await countLivingVillagers(gameid)) + (await countLivingWerewolves(gameid))
+    ) {
+      //move on to full live/die voting
+      let response2 = await app.client.chat.update({
         token: context.botToken,
-        channel: body.user.id,
-        text: "You can't accuse anyone, you're dead!"
-      });
-    } else if (roundTable.accuserArray.includes(body.user.id)) {
-      let response = await app.client.chat.postMessage({
-        token: context.botToken,
-        channel: body.user.id,
-        text: "You already accused someone!"
-      });
-    } else {
-      let response = await app.client.chat.postMessage({
-        token: context.botToken,
-        channel: await getGameChannel(gameid),
-        text:
-          (await playerNameFromId(body.user.id,gameid)) +
-          " has accused " +
-          accusedName +
-          " of being a Werewolf!",
+        ts: body.message.ts,
+        channel: body.channel.id,
         blocks: [
           {
             type: "section",
             text: {
               type: "mrkdwn",
-              text:
-                (await playerNameFromId(body.user.id,gameid)) +
-                " has accused " +
-                accusedName +
-                " of being a Werewolf!"
+              text: "Accusations concluded."
             }
           }
         ]
       });
-      roundTable.accusations++;
-      roundTable.accusationArray.push(accusedName);
-      roundTable.accuserArray.push(body.user.id);
-      await updateRunoffTable(roundTable,gameid);
-      console.log(roundTable);
-      console.log(
-        (await countLivingVillagers(gameid)) + (await countLivingWerewolves(gameid))
-      );
-      if (
-        roundTable.accusations ==
-        (await countLivingVillagers(gameid)) + (await countLivingWerewolves(gameid))
-      ) {
-        //move on to full live/die voting
-        let response2 = await app.client.chat.update({
+      let votesObj = {};
+      roundTable.accusationArray.forEach(accused => {
+        votesObj[accused] = 0;
+      });
+      roundTable.accusationArray.forEach(accused => {
+        votesObj[accused] = votesObj[accused] + 1;
+      });
+      let finalAccused;
+      let finalAccusedVotes = 0;
+      for (const property in votesObj) {
+        let response = await app.client.chat.postMessage({
           token: context.botToken,
-          ts: body.message.ts,
-          channel: body.channel.id,
+          channel: await getGameChannel(gameid),
+          text: `${property}: ${votesObj[property]} votes`
+        });
+        if (votesObj[property] > finalAccusedVotes) {
+          finalAccusedVotes = votesObj[property];
+          finalAccused = property;
+        }
+      }
+      let runoffArray = [];
+      runoffArray = getMax(votesObj);
+      console.log(runoffArray);
+      if (getMax(votesObj).length == 1) {
+        let response3 = await app.client.chat.postMessage({
+          token: context.botToken,
+          channel: await getGameChannel(gameid),
+          text: `${finalAccused} stands accused of being a werewolf. They may now make their last statement, and the village will vote on whether they live or die.`,
           blocks: [
+            {
+              type: "divider"
+            },
             {
               type: "section",
               text: {
                 type: "mrkdwn",
-                text: "Accusations concluded."
+                text:
+                  "*It's time to pass judgment!*\n" +
+                  finalAccused +
+                  " stands accused of being a werewolf. They may now make their last statement, and the village will vote on whether they live or die."
+              },
+              accessory: {
+                type: "image",
+                image_url: "https://i.imgur.com/WU8mD4R.jpg",
+                alt_text: "calendar thumbnail"
               }
+            },
+            {
+              type: "divider"
             }
           ]
         });
-        let votesObj = {};
-        roundTable.accusationArray.forEach(accused => {
-          votesObj[accused] = 0;
+        await updateAccusedInRoundTable(finalAccused,gameid);
+        let livingVillagerArray = await getLivingVillagersPlusWerewolfId(gameid);
+        livingVillagerArray.forEach(player => {
+          distributeVotingButtons(player.player, finalAccused,gameid,context.botToken);
         });
-        roundTable.accusationArray.forEach(accused => {
-          votesObj[accused] = votesObj[accused] + 1;
+      } else {
+        const response3 = await app.client.chat.postMessage({
+          token: context.botToken,
+          channel: await getGameChannel(gameid),
+          text:
+            "The village cannot decide on someone to accuse, so they decide not to kill anyone today."
         });
-        let finalAccused;
-        let finalAccusedVotes = 0;
-        for (const property in votesObj) {
-          let response = await app.client.chat.postMessage({
-            token: context.botToken,
-            channel: await getGameChannel(gameid),
-            text: `${property}: ${votesObj[property]} votes`
-          });
-          if (votesObj[property] > finalAccusedVotes) {
-            finalAccusedVotes = votesObj[property];
-            finalAccused = property;
-          }
-        }
-        let runoffArray = [];
-        runoffArray = getMax(votesObj);
-        console.log(runoffArray);
-        if (getMax(votesObj).length == 1) {
-          let response3 = await app.client.chat.postMessage({
-            token: context.botToken,
-            channel: await getGameChannel(gameid),
-            text: `${finalAccused} stands accused of being a werewolf. They may now make their last statement, and the village will vote on whether they live or die.`,
-            blocks: [
-              {
-                type: "divider"
-              },
-              {
-                type: "section",
-                text: {
-                  type: "mrkdwn",
-                  text:
-                    "*It's time to pass judgment!*\n" +
-                    finalAccused +
-                    " stands accused of being a werewolf. They may now make their last statement, and the village will vote on whether they live or die."
-                },
-                accessory: {
-                  type: "image",
-                  image_url: "https://i.imgur.com/WU8mD4R.jpg",
-                  alt_text: "calendar thumbnail"
-                }
-              },
-              {
-                type: "divider"
-              }
-            ]
-          });
-          await updateAccusedInRoundTable(finalAccused,gameid);
-          let livingVillagerArray = await getLivingVillagersPlusWerewolfId(gameid);
-          livingVillagerArray.forEach(player => {
-            distributeVotingButtons(player.player, finalAccused,gameid,context.botToken);
-          });
-        } else {
-          const response3 = await app.client.chat.postMessage({
-            token: context.botToken,
-            channel: await getGameChannel(gameid),
-            text:
-              "The village cannot decide on someone to accuse, so they decide not to kill anyone today."
-          });
-          startNightRound(gameid, context.botToken);
-        }
+        startNightRound(gameid, context.botToken);
       }
     }
   } catch (error) {
