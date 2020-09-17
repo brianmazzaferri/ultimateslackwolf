@@ -725,10 +725,10 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
   await ack();
   try {
     //get roundTable
+    let roundTable = {};
+    let gameid = body.actions[0].block_id;
     do {
-      let gameid = body.actions[0].block_id;
-      let roundTable = {};
-      await  setTimeout(async ()=> {
+      await setTimeout(async ()=> {
           let roundTable = await queryOne({
             datatype: "round",
             status: "in progress",
