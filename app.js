@@ -726,6 +726,7 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
   try {
     //get roundTable
     let gameid = body.actions[0].block_id;
+    let accusedName = body.actions[0].selected_option.value;
 /*    do {
       await setTimeout(async ()=> {
           let roundTable = await queryOne({
@@ -763,7 +764,6 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
         }
       ]
     });
-    let accusedName = body.actions[0].selected_option.value;
       let response = await app.client.chat.postMessage({
         token: context.botToken,
         channel: await getGameChannel(gameid),
