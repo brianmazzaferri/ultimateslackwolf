@@ -727,6 +727,7 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
     //get roundTable
     let roundTable = {};
     let gameid = body.actions[0].block_id;
+    console.log(gameid);
     do {
       await setTimeout(async ()=> {
           let roundTable = await queryOne({
@@ -734,6 +735,7 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
             status: "in progress",
             gameid:gameid
           });
+          console.log(roundTable);
       },100);
     } while (roundTable.lockstatus != 'open');
     roundTable.lockstatus = 'locked'; 
