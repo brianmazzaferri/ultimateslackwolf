@@ -727,7 +727,7 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
     //get roundTable
     do {
     let gameid = body.actions[0].block_id;
-      setTimeout(()=> {
+      setTimeout(async ()=> {
         let roundTable = await queryOne({
           datatype: "round",
           status: "in progress",
