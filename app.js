@@ -134,7 +134,7 @@ app.view("selectrolesbutton", async ({ ack, body, view, context }) => {
     };
     //insert setupTable
     db.insert(setupTable, (err, newDoc) => {
-      if (err) console.log("There's a problem with the database ", err);
+      if (err) console.error("There's a problem with the database ", err);
       else if (newDoc) console.log("setupTable insert completed");
     });
     //build modal function, using role-setup-modal.json
@@ -171,7 +171,7 @@ app.action("addwerewolf", async ({ ack, body, context }) => {
         setupTable,
         {},
         (err, numReplaced, affectedDocuments) => {
-          if (err) console.log("There's a problem with the database: ", err);
+          if (err) console.error("There's a problem with the database: ", err);
           else if (numReplaced) console.log("werewolf added");
         }
       );
@@ -210,7 +210,7 @@ app.action("addseer", async ({ ack, body, context }) => {
         setupTable,
         {},
         (err, numReplaced, affectedDocuments) => {
-          if (err) console.log("There's a problem with the database: ", err);
+          if (err) console.error("There's a problem with the database: ", err);
           else if (numReplaced) console.log("seer added");
         }
       );
@@ -249,7 +249,7 @@ app.action("addbodyguard", async ({ ack, body, context }) => {
         setupTable,
         {},
         (err, numReplaced, affectedDocuments) => {
-          if (err) console.log("There's a problem with the database: ", err);
+          if (err) console.error("There's a problem with the database: ", err);
           else if (numReplaced) console.log("bodyguard added");
         }
       );
@@ -288,7 +288,7 @@ app.action("removewerewolf", async ({ ack, body, context }) => {
         setupTable,
         {},
         (err, numReplaced, affectedDocuments) => {
-          if (err) console.log("There's a problem with the database: ", err);
+          if (err) console.error("There's a problem with the database: ", err);
           else if (numReplaced) console.log("werewolf removed");
         }
       );
@@ -327,7 +327,7 @@ app.action("removeseer", async ({ ack, body, context }) => {
         setupTable,
         {},
         (err, numReplaced, affectedDocuments) => {
-          if (err) console.log("There's a problem with the database: ", err);
+          if (err) console.error("There's a problem with the database: ", err);
           else if (numReplaced) console.log("seer removed");
         }
       );
@@ -366,7 +366,7 @@ app.action("removebodyguard", async ({ ack, body, context }) => {
         setupTable,
         {},
         (err, numReplaced, affectedDocuments) => {
-          if (err) console.log("There's a problem with the database: ", err);
+          if (err) console.error("There's a problem with the database: ", err);
           else if (numReplaced) console.log("bodyguard removed");
         }
       );
@@ -494,7 +494,7 @@ app.view("startgame", async ({ ack, body, view, context }) => {
     //JANK CITY TO USE SETTIMEOUT. FIX THIS AT SOME POINT
     setTimeout(async () => {
       await db.insert(playerArray, (err, newDoc) => {
-        if (err) console.log("There's a problem with the database: ", err);
+        if (err) console.error("There's a problem with the database: ", err);
         else if (newDoc) console.log("initial player insert completed");
       });
       let villagers;
@@ -518,7 +518,7 @@ app.view("startgame", async ({ ack, body, view, context }) => {
           { $set: { role: "werewolf" } },
           { returnUpdatedDocs: true },
           (err, numReplaced, affectedDocuments) => {
-            if (err) console.log("There's a problem with the database: ", err);
+            if (err) console.error("There's a problem with the database: ", err);
             else if (numReplaced) console.log("werewolf assigned");
           }
         );
@@ -539,7 +539,7 @@ app.view("startgame", async ({ ack, body, view, context }) => {
           { player: sid, gameid: setupTable.setupid  },
           { $set: { spec: "seer" } },
           (err, numReplaced) => {
-            if (err) console.log("There's a problem with the database: ", err);
+            if (err) console.error("There's a problem with the database: ", err);
             else if (numReplaced) console.log("seer assigned");
           }
         );
@@ -560,7 +560,7 @@ app.view("startgame", async ({ ack, body, view, context }) => {
           { player: bid , gameid: setupTable.setupid },
           { $set: { spec: "bodyguard" } },
           (err, numReplaced) => {
-            if (err) console.log("There's a problem with the database: ", err);
+            if (err) console.error("There's a problem with the database: ", err);
             else if (numReplaced) console.log("bodyguard assigned");
           }
         );
@@ -578,7 +578,7 @@ app.view("startgame", async ({ ack, body, view, context }) => {
 
       //insert gameTable
       db.insert(gameTable, (err, newDoc) => {
-        if (err) console.log("There's a problem with the database ", err);
+        if (err) console.error("There's a problem with the database ", err);
         else if (newDoc) console.log("gameTable insert completed");
       });
 
@@ -600,7 +600,7 @@ app.view("startgame", async ({ ack, body, view, context }) => {
       };
       // insert round record
       await db.insert(roundTable, (err, docs) => {
-        if (err) console.log("There's a problem with the database: ", err);
+        if (err) console.error("There's a problem with the database: ", err);
         else if (docs) console.log("round table inserted");
       });
 
@@ -723,6 +723,12 @@ app.action("seerSelect", async ({ ack, body, context }) => {
 app.action("accusationSelect", async ({ ack, body, context }) => {
   await ack();
   try {
+    //get roundTable
+    let roundTable = await queryOne({
+      datatype: "round",
+      status: "in progress",
+      gameid:gameid
+    });
     let gameid = body.actions[0].block_id;
     let response4 = await app.client.chat.update({
       token: context.botToken,
@@ -740,12 +746,6 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
     });
     let accusedName = body.actions[0].selected_option.value;
     let accuserStatus = await checkAccuserStatus(body.user.id, gameid);
-    //get roundTable
-    let roundTable = await queryOne({
-      datatype: "round",
-      status: "in progress",
-      gameid:gameid
-    });
     if (accuserStatus === "dead") {
       let response = await app.client.chat.postMessage({
         token: context.botToken,
@@ -923,7 +923,7 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
           delete runoffTable._id;
           console.log(runoffTable);
           await db.insert(runoffTable, (err, docs) => {
-            if (err) console.log("There's a problem with the database: ", err);
+            if (err) console.error("There's a problem with the database: ", err);
             else if (docs) console.log("runoff table inserted");
           });
         }
@@ -1802,7 +1802,7 @@ async function startDayRound(deadPerson, gameid,token) {
 function getGameChannel(gameid) {
   return new Promise((resolve, reject) => {
     db.findOne({ datatype: "game",gameid:gameid }, { channel: 1, _id: 0 }, (err, docs) => {
-      if (err) console.log("There's a problem with the database ", err);
+      if (err) console.error("There's a problem with the database ", err);
       else if (docs) console.log("getGameChannel query completed");
       resolve(docs.channel);
     });
@@ -1816,7 +1816,7 @@ function getAccusedRole(accused,gameid) {
       { datatype: "player", name: accused,gameid:gameid},
       { role: 1, _id: 0 },
       (err, docs) => {
-        if (err) console.log("There's a problem with the database ", err);
+        if (err) console.error("There's a problem with the database ", err);
         else if (docs) console.log("getAccusedRole query completed");
         resolve(docs.role);
       }
@@ -1831,7 +1831,7 @@ function getAccusedFromRoundTable(gameid) {
       { datatype: "round", status: "in progress",gameid:gameid },
       { accused: 1, _id: 0 },
       (err, docs) => {
-        if (err) console.log("There's a problem with the database ", err);
+        if (err) console.error("There's a problem with the database ", err);
         else if (docs) console.log("getAccusedFromRoundTable query completed");
         resolve(docs.accused);
       }
@@ -1867,7 +1867,7 @@ function getLivingVillagers(gameid) {
       { role: "villager", status: "alive",gameid:gameid },
       { name: 1, _id: 0 },
       (err, docs) => {
-        if (err) console.log("There's a problem with the database ", err);
+        if (err) console.error("There's a problem with the database ", err);
         else if (docs) console.log("getLivingVillagers query completed");
         resolve(docs);
       }
@@ -1879,7 +1879,7 @@ function getLivingVillagers(gameid) {
 function getLivingVillagersPlusWerewolf(gameid) {
   return new Promise((resolve, reject) => {
     db.find({ status: "alive",gameid:gameid }, { name: 1, _id: 0 }, (err, docs) => {
-      if (err) console.log("There's a problem with the database ", err);
+      if (err) console.error("There's a problem with the database ", err);
       else if (docs)
         console.log("getLivingVillagersPlusWerewolf query completed");
       resolve(docs);
@@ -1901,7 +1901,7 @@ function getLivingVillagersPlusWerewolfId(gameid) {
       { status: "alive",gameid:gameid },
       { player: 1, name: 1, role: 1, _id: 0 },
       (err, docs) => {
-        if (err) console.log("There's a problem with the database ", err);
+        if (err) console.error("There's a problem with the database ", err);
         else if (docs)
           console.log("getLivingVillagersPlusWerewolfId query completed");
         resolve(docs);
@@ -1914,7 +1914,7 @@ function getLivingVillagersPlusWerewolfId(gameid) {
 function getCurrentRound(gameid) {
   return new Promise((resolve, reject) => {
     db.findOne({ datatype: "round", status: "in progress",gameid:gameid }, (err, docs) => {
-      if (err) console.log("There's a problem with the database ", err);
+      if (err) console.error("There's a problem with the database ", err);
       else if (docs) console.log("getCurrentRound query completed");
       resolve(docs);
     });
@@ -1928,7 +1928,7 @@ function killVillager(name,gameid) {
     { $set: { status: "dead" } },
     { returnUpdatedDocs: true },
     (err, numReplaced, affectedDocuments) => {
-      if (err) console.log("There's a problem with the database: ", err);
+      if (err) console.error("There's a problem with the database: ", err);
       else if (numReplaced) console.log("villager killed");
     }
   );
@@ -1940,7 +1940,7 @@ function protectVillager(name, round, gameid) {
     { $set: { protected: name } },
     { returnUpdatedDocs: true },
     (err, numReplaced, affectedDocuments) => {
-      if (err) console.log("There's a problem with the database: ", err);
+      if (err) console.error("There's a problem with the database: ", err);
       else if (numReplaced) console.log("villager protected");
     }
   );
@@ -1952,7 +1952,7 @@ function updateAccusedInRoundTable(name,gameid) {
     { datatype: "round", status: "in progress",gameid:gameid },
     { $set: { accused: name } },
     (err, numReplaced) => {
-      if (err) console.log("There's a problem with the database: ", err);
+      if (err) console.error("There's a problem with the database: ", err);
       else if (numReplaced) console.log("accused updated in roundTable");
     }
   );
@@ -1964,7 +1964,7 @@ function updateRoundTable(data,gameid) {
     { datatype: "round", status: "in progress",gameid:gameid },
     data,
     (err, numReplaced) => {
-      if (err) console.log("There's a problem with the database: ", err);
+      if (err) console.error("There's a problem with the database: ", err);
       else if (numReplaced) console.log("roundTable updated");
     }
   );
@@ -1976,7 +1976,7 @@ function updateRunoffTable(data,gameid) {
     { datatype: "runoff", status: "in progress",gameid:gameid},
     data,
     (err, numReplaced) => {
-      if (err) console.log("There's a problem with the database: ", err);
+      if (err) console.error("There's a problem with the database: ", err);
       else if (numReplaced) console.log("runoffTable updated");
     }
   );
@@ -1985,7 +1985,7 @@ function updateRunoffTable(data,gameid) {
 //print the whole database (for testing)
 function printDatabase() {
   db.find({}, (err, data) => {
-    if (err) console.log("There's a problem with the database: ", err);
+    if (err) console.error("There's a problem with the database: ", err);
     else if (data) console.log(data);
   });
 }
@@ -1994,7 +1994,7 @@ function printDatabase() {
 function countLivingVillagers(gameid) {
   return new Promise((resolve, reject) => {
     db.count({ role: "villager", status: "alive",gameid:gameid}, (err, count) => {
-      if (err) console.log("There's a problem with the database: ", err);
+      if (err) console.error("There's a problem with the database: ", err);
       else if (count) console.log("living villagers :" + count);
       resolve(count);
     });
@@ -2005,7 +2005,7 @@ function countLivingVillagers(gameid) {
 function countLivingWerewolves(gameid) {
   return new Promise((resolve, reject) => {
     db.count({ role: "werewolf", status: "alive",gameid:gameid }, (err, count) => {
-      if (err) console.log("There's a problem with the database: ", err);
+      if (err) console.error("There's a problem with the database: ", err);
       else if (count) console.log("living werewolves :" + count);
       resolve(count);
     });
@@ -2016,7 +2016,7 @@ function countLivingWerewolves(gameid) {
 function checkAccuserStatus(accuser, gameid) {
   return new Promise((resolve, reject) => {
     db.findOne({ player: accuser,gameid:gameid }, { status: 1, _id: 0 }, (err, docs) => {
-      if (err) console.log("There's a problem with the database: ", err);
+      if (err) console.error("There's a problem with the database: ", err);
       else if (docs) console.log("accuser life check queried");
       resolve(docs.status);
     });
@@ -2027,7 +2027,7 @@ function checkAccuserStatus(accuser, gameid) {
 function playerNameFromId(id,gameid) {
   return new Promise((resolve, reject) => {
     db.findOne({ player: id,gameid:gameid}, { name: 1, _id: 0 }, (err, docs) => {
-      if (err) console.log("There's a problem with the database: ", err);
+      if (err) console.error("There's a problem with the database: ", err);
       else if (docs) console.log("player name queried from id");
       resolve(docs.name);
     });
@@ -2038,7 +2038,7 @@ function playerNameFromId(id,gameid) {
 function queryOne(query) {
   return new Promise((resolve, reject) => {
     db.findOne(query, (err, docs) => {
-      if (err) console.log("There's a problem with the database: ", err);
+      if (err) console.error("There's a problem with the database: ", err);
       else if (docs) console.log(query + " queryOne run successfully.");
       resolve(docs);
     });
@@ -2049,7 +2049,7 @@ function queryOne(query) {
 function query(query) {
   return new Promise((resolve, reject) => {
     db.find(query, (err, docs) => {
-      if (err) console.log("There's a problem with the database: ", err);
+      if (err) console.error("There's a problem with the database: ", err);
       else if (docs) console.log(query + " query run successfully.");
       resolve(docs);
     });
@@ -2062,7 +2062,7 @@ async function advanceRound(gameid) {
     { datatype: "game" , gameid:gameid},
     { round: 1, _id: 0 },
     async (err, docs) => {
-      if (err) console.log("There's a problem with the database: ", err);
+      if (err) console.error("There's a problem with the database: ", err);
       else if (docs) console.log("game table round queried");
       let currentRound = docs.round;
       //update current round status to complete
@@ -2071,7 +2071,7 @@ async function advanceRound(gameid) {
         { $set: { status: "completed" } },
         { multi: false },
         (err, numReplaced) => {
-          if (err) console.log("There's a problem with the database: ", err);
+          if (err) console.error("There's a problem with the database: ", err);
           else if (numReplaced)
             console.log("round " + currentRound + " completed");
         }
@@ -2082,7 +2082,7 @@ async function advanceRound(gameid) {
         { $set: { round: currentRound + 1 } },
         { multi: false },
         (err, numReplaced) => {
-          if (err) console.log("There's a problem with the database: ", err);
+          if (err) console.error("There's a problem with the database: ", err);
           else if (numReplaced)
             console.log(numReplaced + " game round updated");
         }
@@ -2107,7 +2107,7 @@ async function advanceRound(gameid) {
       };
       // insert round record
       await db.insert(roundTable, (err, docs) => {
-        if (err) console.log("There's a problem with the database: ", err);
+        if (err) console.error("There's a problem with the database: ", err);
         else if (docs) console.log("round table inserted");
       });
       // close out runoff record
@@ -2115,7 +2115,7 @@ async function advanceRound(gameid) {
         { datatype: "runoff", status: "in progress",gameid:gameid },
         { $set: { status: "complete" } },
         (err, numReplaced) => {
-          if (err) console.log("There's a problem with the database: ", err);
+          if (err) console.error("There's a problem with the database: ", err);
           else if (numReplaced)
             console.log(numReplaced + " runoffTable updated");
         }
@@ -2199,7 +2199,7 @@ async function endGame(winner,gameid, token) {
     });
   }
   db.remove({gameid:gameid}, { multi: true }, function(err) {
-    if (err) console.log("There's a problem with the database: ", err);
+    if (err) console.error("There's a problem with the database: ", err);
     else console.log("database cleared for game "+gameid);
   });
 }
@@ -2226,7 +2226,7 @@ async function updateWerewolfChannel(gameid, token) {
 //  fully clear the database
 function clearDatabase(){
     db.remove({}, { multi: true }, function(err) {
-      if (err) console.log("There's a problem with the database: ", err);
+      if (err) console.error("There's a problem with the database: ", err);
       else console.log("database cleared");
     });
 };
@@ -2247,6 +2247,7 @@ function clearDatabase(){
 in progress:
 
 bugs:
+race condition around simultaneous accusations / votes
 
 ops:
 build a bot to do my deploys?
