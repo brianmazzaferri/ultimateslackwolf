@@ -596,7 +596,8 @@ app.view("startgame", async ({ ack, body, view, context }) => {
         accusationArray: [],
         accuserArray: [],
         status: "in progress",
-        protected: ""
+        protected: "",
+        lockstatus: "open"
       };
       // insert round record
       await db.insert(roundTable, (err, docs) => {
@@ -724,12 +725,23 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
   await ack();
   try {
     //get roundTable
-    let roundTable = await queryOne({
-      datatype: "round",
-      status: "in progress",
-      gameid:gameid
-    });
+    do {
     let gameid = body.actions[0].block_id;
+      setTimeout(()=> {
+        let roundTable = await queryOne({
+          datatype: "round",
+          status: "in progress",
+          gameid:gameid
+        });
+    },100);
+    } while (roundTable.lockstatus === 'locked');
+    roundTable.lockstatus = 'locked'; 
+    await updateRoundTable(roundTable,gameid);
+    roundTable.accusations++;
+    roundTable.accusationArray.push(accusedName);
+    roundTable.accuserArray.push(body.user.id);
+    roundTable.lockstatus='open';
+    await updateRoundTable(roundTable,gameid);
     let response4 = await app.client.chat.update({
       token: context.botToken,
       ts: body.message.ts,
@@ -745,20 +757,6 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
       ]
     });
     let accusedName = body.actions[0].selected_option.value;
-    let accuserStatus = await checkAccuserStatus(body.user.id, gameid);
-    if (accuserStatus === "dead") {
-      let response = await app.client.chat.postMessage({
-        token: context.botToken,
-        channel: body.user.id,
-        text: "You can't accuse anyone, you're dead!"
-      });
-    } else if (roundTable.accuserArray.includes(body.user.id)) {
-      let response = await app.client.chat.postMessage({
-        token: context.botToken,
-        channel: body.user.id,
-        text: "You already accused someone!"
-      });
-    } else {
       let response = await app.client.chat.postMessage({
         token: context.botToken,
         channel: await getGameChannel(gameid),
@@ -781,10 +779,6 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
           }
         ]
       });
-      roundTable.accusations++;
-      roundTable.accusationArray.push(accusedName);
-      roundTable.accuserArray.push(body.user.id);
-      await updateRoundTable(roundTable,gameid);
       console.log(roundTable);
       console.log(
         (await countLivingVillagers(gameid)) + (await countLivingWerewolves(gameid))
@@ -928,7 +922,6 @@ app.action("accusationSelect", async ({ ack, body, context }) => {
           });
         }
       }
-    }
   } catch (error) {
     console.error(error);
   }
@@ -2103,7 +2096,8 @@ async function advanceRound(gameid) {
         accusationArray: [],
         accuserArray: [],
         status: "in progress",
-        protected: ""
+        protected: "",
+        lockstatus: "open"
       };
       // insert round record
       await db.insert(roundTable, (err, docs) => {
