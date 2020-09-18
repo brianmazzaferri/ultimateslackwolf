@@ -73,7 +73,7 @@ app.shortcut(
                 action_id: "channelname",
                   placeholder: {
                   type: "plain_text",
-                  text: "No spaces, Capitals, or Special Characters",
+                  text: "No spaces, Capitals, or Special Characters. 80 character max.",
                   emoji: true
                 }
               },
