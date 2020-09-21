@@ -4,7 +4,7 @@
   "description": "An attempt to code a basic Werewolf game using Bolt & Slack",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js > output.log 2> error.log"
   },
   "dependencies": {
     "@slack/bolt": "^2.1.1",
