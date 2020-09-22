@@ -44,65 +44,76 @@ app.shortcut(
         token: context.botToken,
         trigger_id: shortcut.trigger_id,
         view: {
-          type: "modal",
-          callback_id: "selectrolesbutton",
-          title: {
-            type: "plain_text",
-            text: "Start A New Game",
-            emoji: true
+          "title": {
+            "type": "plain_text",
+            "text": "Start A New Game",
+            "emoji": true
           },
-          submit: {
-            type: "plain_text",
-            text: "Select Roles",
-            emoji: true
+          "type": "modal",
+          "callback_id": "selectrolesbutton",
+          "close": {
+            "type": "plain_text",
+            "text": "Cancel",
+            "emoji": true
           },
-          close: {
-            type: "plain_text",
-            text: "Cancel",
-            emoji: true
-          },
-          blocks: [
+          "blocks": [
             {
-              type: "divider"
+              "type": "divider"
             },
             {
-              type: "input",
-              block_id: "channelblock",
-              element: {
-                type: "plain_text_input",
-                action_id: "channelname",
-                  placeholder: {
-                  type: "plain_text",
-                  text: "No spaces, Capitals, or Special Characters. 80 characters max",
-                  emoji: true
+              "type": "input",
+              "block_id": "channelblock",
+              "element": {
+                "type": "plain_text_input",
+                "action_id": "channelname",
+                "placeholder": {
+                  "type": "plain_text",
+                  "text": "No spaces, Capitals, or Special Characters. 80 characters max",
+                  "emoji": true
                 }
               },
-              label: {
-                type: "plain_text",
-                text: "New Channel Name",
-                emoji: true
+              "label": {
+                "type": "plain_text",
+                "text": "New Channel Name",
+                "emoji": true
               }
             },
             {
-              type: "input",
-              block_id: "usersblock",
-              element: {
-                type: "multi_users_select",
-                action_id: "userstoadd",
-                placeholder: {
-                  type: "plain_text",
-                  text: "Select users (include yourself!)",
-                  emoji: true
+              "type": "input",
+              "block_id": "usersblock",
+              "element": {
+                "type": "multi_users_select",
+                "action_id": "userstoadd",
+                "placeholder": {
+                  "type": "plain_text",
+                  "text": "Select users (include yourself!)",
+                  "emoji": true
                 }
               },
-              label: {
-                type: "plain_text",
-                text: "Players",
-                emoji: true
+              "label": {
+                "type": "plain_text",
+                "text": "Players",
+                "emoji": true
               }
             },
             {
-              type: "divider"
+              "type": "divider"
+            },
+            {
+              "type": "actions",
+              "elements": [
+                {
+                  "type": "button",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Choose Player Roles",
+                    "emoji": true
+                  },
+                  "value": "click_me_123",
+                  "action_id": "choose_player_roles",
+                  "style": "primary"
+                }
+              ]
             }
           ]
         }
@@ -113,7 +124,7 @@ app.shortcut(
   }
 );
 
-app.view("selectrolesbutton", async ({ ack, body, view, context }) => {
+app.action("choose_player_roles", async ({ ack, body, context }) => {
   try {
     await ack();
     let userArray = view.state.values.usersblock.userstoadd.selected_users;
@@ -146,9 +157,10 @@ app.view("selectrolesbutton", async ({ ack, body, view, context }) => {
       setupTable.bodyguards,
       setupTable.setupid
     );
-    const response2 = await app.client.views.open({
+    const response2 = await app.client.views.update({
       token: context.botToken,
-      trigger_id: body.trigger_id,
+      view_id: body.view.id,
+      has: body.view.hash,
       view: modal
     });
   } catch (error) {
