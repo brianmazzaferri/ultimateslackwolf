@@ -116,6 +116,11 @@ app.shortcut(
 app.view("selectrolesbutton", async ({ ack, body, view, context }) => {
   try {
     await ack();
+
+    console.log("BODY");
+    console.log(body);
+    console.log("END BODY");
+    
     let userArray = view.state.values.usersblock.userstoadd.selected_users;
     //create a table to represent role selection
     let setupTable = {
@@ -146,11 +151,21 @@ app.view("selectrolesbutton", async ({ ack, body, view, context }) => {
       setupTable.bodyguards,
       setupTable.setupid
     );
+
+    console.log("MODAL");
+    console.log (modal);
+    console.log("END MODAL");
+
     const response2 = await app.client.views.open({
       token: context.botToken,
       trigger_id: body.trigger_id,
       view: modal
     });
+
+    console.log("RESPONSE2");
+    console.log(response2);
+    console.log("END RESPONSE 2");
+
   } catch (error) {
     console.error(error);
   }
