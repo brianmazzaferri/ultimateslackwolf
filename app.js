@@ -120,7 +120,7 @@ app.view("selectrolesbutton", async ({ ack, body, view, context }) => {
     console.log("BODY");
     console.log(body);
     console.log("END BODY");
-    
+
     let userArray = view.state.values.usersblock.userstoadd.selected_users;
     //create a table to represent role selection
     let setupTable = {
@@ -159,6 +159,7 @@ app.view("selectrolesbutton", async ({ ack, body, view, context }) => {
     const response2 = await app.client.views.open({
       token: context.botToken,
       trigger_id: body.trigger_id,
+      hash:body.view.hash,
       view: modal
     });
 
