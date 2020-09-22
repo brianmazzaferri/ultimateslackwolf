@@ -152,7 +152,7 @@ app.view("selectrolesbutton", async ({ ack, body, view, context }) => {
       view: modal
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 });
 
