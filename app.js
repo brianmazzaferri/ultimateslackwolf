@@ -73,7 +73,7 @@ app.shortcut(
                 action_id: "channelname",
                   placeholder: {
                   type: "plain_text",
-                  text: "No spaces, Capitals, or Special Characters. 80 character max.",
+                  text: "No spaces, Capitals, or Special Characters. 80 characters max",
                   emoji: true
                 }
               },
@@ -138,7 +138,7 @@ app.view("selectrolesbutton", async ({ ack, body, view, context }) => {
       else if (newDoc) console.log("setupTable insert completed");
     });
     //build modal function, using role-setup-modal.json
-    const modal = buildRoleSelectModal(
+    const modal = await buildRoleSelectModal(
       setupTable.balancescore,
       setupTable.villagers,
       setupTable.werewolves,
