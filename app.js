@@ -117,6 +117,8 @@ app.view("selectrolesbutton", async ({ ack, body, view, context }) => {
   try {
     await ack();
 
+    setTimeout(async()=>{
+
     console.log("BODY");
     console.log(body);
     console.log("END BODY");
@@ -166,6 +168,8 @@ app.view("selectrolesbutton", async ({ ack, body, view, context }) => {
     console.log("RESPONSE2");
     console.log(response2);
     console.log("END RESPONSE 2");
+
+  },1500);
 
   } catch (error) {
     console.error(error);
