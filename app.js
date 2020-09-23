@@ -115,9 +115,9 @@ app.shortcut(
 
 app.view("selectrolesbutton", async ({ ack, body, view, context }) => {
   try {
-    await ack();
+//    await ack();
 //this is super jank, but this is the only way to reliably open the modal
-    setTimeout(async()=>{
+//    setTimeout(async()=>{
 
     let userArray = view.state.values.usersblock.userstoadd.selected_users;
     //create a table to represent role selection
@@ -135,11 +135,7 @@ app.view("selectrolesbutton", async ({ ack, body, view, context }) => {
       players: userArray.length,
       balancescore: userArray.length + 1
     };
-    //insert setupTable
-    db.insert(setupTable, (err, newDoc) => {
-      if (err) console.error("There's a problem with the database ", err);
-      else if (newDoc) console.log("setupTable insert completed");
-    });
+
     //build modal function, using role-setup-modal.json
     const modal = await buildRoleSelectModal(
       setupTable.balancescore,
@@ -150,14 +146,25 @@ app.view("selectrolesbutton", async ({ ack, body, view, context }) => {
       setupTable.setupid
     );
 
-    const response2 = await app.client.views.open({
+    await ack({
+      response_action:"update",
+      view:modal
+    });
+
+    //insert setupTable
+    db.insert(setupTable, (err, newDoc) => {
+      if (err) console.error("There's a problem with the database ", err);
+      else if (newDoc) console.log("setupTable insert completed");
+    });
+
+ /*   const response2 = await app.client.views.open({
       token: context.botToken,
       trigger_id: body.trigger_id,
       hash:body.view.hash,
       view: modal
-    });
+    });*/
 
-  },100);
+//  },100);
 
   } catch (error) {
     console.error(error);
